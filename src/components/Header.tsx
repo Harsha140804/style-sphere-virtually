@@ -21,16 +21,16 @@ export const Header = () => {
 
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#try-on" className="text-foreground hover:text-primary transition-colors">
               Try On
             </a>
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#features" className="text-foreground hover:text-primary transition-colors">
               Browse
             </a>
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#wardrobe" className="text-foreground hover:text-primary transition-colors">
               Wardrobe
             </a>
-            <a href="#" className="text-foreground hover:text-primary transition-colors">
+            <a href="#community" className="text-foreground hover:text-primary transition-colors">
               Social
             </a>
           </nav>
@@ -66,7 +66,12 @@ export const Header = () => {
             >
               <Menu className="w-4 h-4" />
             </Button>
-            <Button variant="hero" size="sm" className="hidden sm:flex">
+            <Button 
+              variant="hero" 
+              size="sm" 
+              className="hidden sm:flex"
+              onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               Try Now
             </Button>
           </div>
@@ -76,20 +81,25 @@ export const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
-              <a href="#" className="text-foreground hover:text-primary transition-colors">
+              <a href="#try-on" className="text-foreground hover:text-primary transition-colors">
                 Try On
               </a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">
+              <a href="#features" className="text-foreground hover:text-primary transition-colors">
                 Browse
               </a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">
+              <a href="#wardrobe" className="text-foreground hover:text-primary transition-colors">
                 Wardrobe
               </a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">
+              <a href="#community" className="text-foreground hover:text-primary transition-colors">
                 Social
               </a>
               <div className="pt-2">
-                <Button variant="hero" size="sm" className="w-full">
+                <Button 
+                  variant="hero" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+                >
                   Try Now
                 </Button>
               </div>

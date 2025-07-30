@@ -39,11 +39,21 @@ export const HeroSection = () => {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 animate-fade-in-up">
-            <Button variant="hero" size="hero" className="min-w-[200px]">
+            <Button 
+              variant="hero" 
+              size="hero" 
+              className="min-w-[200px]"
+              onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <Camera className="w-5 h-5 mr-2" />
               Start Virtual Try-On
             </Button>
-            <Button variant="elegant" size="lg" className="min-w-[200px]">
+            <Button 
+              variant="elegant" 
+              size="lg" 
+              className="min-w-[200px]"
+              onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <Upload className="w-5 h-5 mr-2" />
               Upload Photo
             </Button>
