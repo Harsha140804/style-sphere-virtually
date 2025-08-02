@@ -24,87 +24,129 @@ interface OutfitCatalogProps {
   isProcessing: boolean;
 }
 
-// Mock outfit data
+// Mock clothing data - only individual clothing items
 const mockOutfits: Outfit[] = [
+  // Female clothing
   {
-    id: '1',
-    name: 'Classic White Shirt',
-    image: '/api/placeholder/300/400',
-    category: 'Shirts',
-    gender: 'unisex',
-    brand: 'H&M',
-    price: 1499,
-    platform: 'Myntra'
-  },
-  {
-    id: '2',
-    name: 'Denim Jacket',
-    image: '/api/placeholder/300/400',
-    category: 'Jackets',
-    gender: 'unisex',
-    brand: 'Levi\'s',
-    price: 3999,
-    platform: 'Amazon'
-  },
-  {
-    id: '3',
+    id: 'f1',
     name: 'Floral Summer Dress',
-    image: '/api/placeholder/300/400',
+    image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=300&h=400&fit=crop',
     category: 'Dresses',
     gender: 'female',
     brand: 'Zara',
-    price: 2899,
+    price: 2999,
+    platform: 'Myntra'
+  },
+  {
+    id: 'f2',
+    name: 'Elegant Black Dress',
+    image: 'https://images.unsplash.com/photo-1566479179817-48b5e8a8fcf9?w=300&h=400&fit=crop',
+    category: 'Dresses',
+    gender: 'female',
+    brand: 'Mango',
+    price: 4999,
     platform: 'Flipkart'
   },
   {
-    id: '4',
-    name: 'Casual T-Shirt',
-    image: '/api/placeholder/300/400',
+    id: 'f3',
+    name: 'Red Party Dress',
+    image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=300&h=400&fit=crop',
+    category: 'Dresses',
+    gender: 'female',
+    brand: 'H&M',
+    price: 3499,
+    platform: 'Amazon'
+  },
+  {
+    id: 'f4',
+    name: 'Blue Casual Top',
+    image: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=300&h=400&fit=crop',
+    category: 'Tops',
+    gender: 'female',
+    brand: 'Forever 21',
+    price: 1799,
+    platform: 'Myntra'
+  },
+  {
+    id: 'f5',
+    name: 'White Blouse',
+    image: 'https://images.unsplash.com/photo-1485462537746-965f33f7f6a7?w=300&h=400&fit=crop',
+    category: 'Blouses',
+    gender: 'female',
+    brand: 'Zara',
+    price: 2299,
+    platform: 'Flipkart'
+  },
+  {
+    id: 'f6',
+    name: 'Yellow Summer Top',
+    image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=300&h=400&fit=crop',
+    category: 'Tops',
+    gender: 'female',
+    brand: 'Mango',
+    price: 1999,
+    platform: 'Amazon'
+  },
+  // Male clothing
+  {
+    id: 'm1',
+    name: 'Classic White Shirt',
+    image: 'https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?w=300&h=400&fit=crop',
+    category: 'Shirts',
+    gender: 'male',
+    brand: 'Van Heusen',
+    price: 1999,
+    platform: 'Amazon'
+  },
+  {
+    id: 'm2',
+    name: 'Navy Blue T-Shirt',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=400&fit=crop',
     category: 'T-Shirts',
     gender: 'male',
     brand: 'Nike',
     price: 1299,
-    platform: 'Myntra'
+    platform: 'Flipkart'
   },
   {
-    id: '5',
-    name: 'Formal Blazer',
-    image: '/api/placeholder/300/400',
-    category: 'Blazers',
+    id: 'm3',
+    name: 'Black Formal Shirt',
+    image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=300&h=400&fit=crop',
+    category: 'Shirts',
     gender: 'male',
-    brand: 'Raymond',
-    price: 5999,
-    platform: 'Amazon'
-  },
-  {
-    id: '6',
-    name: 'Maxi Dress',
-    image: '/api/placeholder/300/400',
-    category: 'Dresses',
-    gender: 'female',
-    brand: 'Forever 21',
+    brand: 'Arrow',
     price: 2299,
     platform: 'Myntra'
   },
   {
-    id: '7',
-    name: 'Chino Pants',
-    image: '/api/placeholder/300/400',
-    category: 'Pants',
+    id: 'm4',
+    name: 'Casual Polo Shirt',
+    image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=300&h=400&fit=crop',
+    category: 'Polo',
     gender: 'male',
-    brand: 'Uniqlo',
-    price: 1899,
+    brand: 'Ralph Lauren',
+    price: 3499,
+    platform: 'Amazon'
+  },
+  {
+    id: 'm5',
+    name: 'Grey Hoodie',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=300&h=400&fit=crop',
+    category: 'Hoodies',
+    gender: 'male',
+    brand: 'Adidas',
+    price: 2799,
     platform: 'Flipkart'
   },
   {
-    id: '8',
-    name: 'Crop Top',
-    image: '/api/placeholder/300/400',
-    category: 'Tops',
-    gender: 'female',
-    brand: 'Urban Outfitters',
-    price: 999,
-    platform: 'Amazon'
+    id: 'm6',
+    name: 'Green Casual Shirt',
+    image: 'https://images.unsplash.com/photo-1588117472013-59bb13edafec?w=300&h=400&fit=crop',
+    category: 'Shirts',
+    gender: 'male',
+    brand: 'Levis',
+    price: 2499,
+    platform: 'Myntra'
   }
 ];
 

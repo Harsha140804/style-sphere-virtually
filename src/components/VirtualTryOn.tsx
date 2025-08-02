@@ -83,18 +83,76 @@ export const VirtualTryOn = () => {
     setIsProcessing(true);
     
     try {
-      // Simulate AI processing - in real implementation, this would call an AI service
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      if (!uploadedImage) throw new Error('No uploaded image');
       
-      // For demo, we'll use the uploaded image as result
-      // In real implementation, this would be the AI-generated try-on result
-      setResultImage(uploadedImage);
+      toast({
+        title: "Processing...",
+        description: "AI is generating your virtual try-on"
+      });
+      
+      // Load the uploaded image
+      const response = await fetch(uploadedImage);
+      const blob = await response.blob();
+      const userImage = await loadImage(blob);
+      
+      // Remove background from user image
+      const userWithoutBg = await removeBackground(userImage);
+      const userNoBgImage = await loadImage(userWithoutBg);
+      
+      // Load the outfit image
+      const outfitResponse = await fetch(outfit.image);
+      const outfitBlob = await outfitResponse.blob();
+      const outfitImage = await loadImage(outfitBlob);
+      
+      // Create composite image with realistic overlay
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not get canvas context');
+      
+      // Set canvas size based on user image
+      canvas.width = userNoBgImage.width;
+      canvas.height = userNoBgImage.height;
+      
+      // Draw white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Calculate outfit positioning and scaling based on user body
+      const outfitScale = Math.min(
+        canvas.width * 0.6 / outfitImage.width,
+        canvas.height * 0.7 / outfitImage.height
+      );
+      
+      const outfitWidth = outfitImage.width * outfitScale;
+      const outfitHeight = outfitImage.height * outfitScale;
+      const outfitX = (canvas.width - outfitWidth) / 2;
+      const outfitY = canvas.height * 0.15; // Position outfit on upper body
+      
+      // Draw outfit first (behind the person)
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(outfitImage, outfitX, outfitY, outfitWidth, outfitHeight);
+      
+      // Reset alpha and draw person on top
+      ctx.globalAlpha = 1.0;
+      ctx.drawImage(userNoBgImage, 0, 0);
+      
+      // Convert canvas to blob and create URL
+      const resultBlob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Failed to create result blob'));
+        }, 'image/png', 1.0);
+      });
+      
+      const resultUrl = URL.createObjectURL(resultBlob);
+      setResultImage(resultUrl);
       setCurrentStep('result');
       
       toast({
         title: "Try-on complete!",
         description: "Your virtual try-on is ready"
       });
+      
     } catch (error) {
       console.error('Error processing try-on:', error);
       toast({
