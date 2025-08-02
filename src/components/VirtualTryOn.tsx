@@ -133,73 +133,122 @@ export const VirtualTryOn = () => {
       outputCanvas.width = userImage.width;
       outputCanvas.height = userImage.height;
       
-      // Draw white background
-      outputCtx.fillStyle = '#ffffff';
-      outputCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
-      
-      // Calculate outfit positioning based on person detection
-      const outfitScale = Math.min(
-        outputCanvas.width * 0.4 / outfitImage.width,
-        outputCanvas.height * 0.6 / outfitImage.height
-      );
-      
-      const outfitWidth = outfitImage.width * outfitScale;
-      const outfitHeight = outfitImage.height * outfitScale;
-      
-      // Position outfit on torso area (approximately)
-      const outfitX = (outputCanvas.width - outfitWidth) / 2;
-      const outfitY = outputCanvas.height * 0.2; // Upper body area
-      
-      // Create a temporary canvas for outfit with person-shaped mask
-      const tempCanvas = document.createElement('canvas');
-      const tempCtx = tempCanvas.getContext('2d');
-      if (!tempCtx) throw new Error('Could not get temp canvas context');
-      
-      tempCanvas.width = outputCanvas.width;
-      tempCanvas.height = outputCanvas.height;
-      
-      // Draw scaled outfit
-      tempCtx.drawImage(outfitImage, outfitX, outfitY, outfitWidth, outfitHeight);
-      
-      // Apply person mask to the outfit
-      const tempImageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-      const tempData = tempImageData.data;
-      
-      // Use person mask to show outfit only where person is
-      for (let i = 0; i < personMask.data.length; i++) {
-        const alpha = personMask.data[i];
-        const pixelIndex = i * 4;
-        // Make outfit visible only where person is detected
-        tempData[pixelIndex + 3] = Math.min(tempData[pixelIndex + 3], alpha);
-      }
-      
-      tempCtx.putImageData(tempImageData, 0, 0);
-      
-      // Now composite everything
-      // First draw the background (original image with person removed for clothing area)
+      // Start with the original user image as base
       outputCtx.drawImage(userImage, 0, 0);
       
-      // Create mask for clothing area and blend the outfit
+      // Analyze person bounds for better outfit positioning
+      let minX = userImage.width, maxX = 0, minY = userImage.height, maxY = 0;
+      for (let y = 0; y < userImage.height; y++) {
+        for (let x = 0; x < userImage.width; x++) {
+          const idx = y * userImage.width + x;
+          if (personMask.data[idx] > 128) {
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+          }
+        }
+      }
+      
+      const personWidth = maxX - minX;
+      const personHeight = maxY - minY;
+      const personCenterX = (minX + maxX) / 2;
+      
+      // Calculate better outfit positioning based on detected person bounds
+      let outfitScale, outfitX, outfitY, outfitWidth, outfitHeight;
+      
+      if (outfit.category === 'dress') {
+        // For dresses, cover torso to legs
+        outfitScale = personWidth * 0.8 / outfitImage.width;
+        outfitWidth = outfitImage.width * outfitScale;
+        outfitHeight = outfitImage.height * outfitScale;
+        outfitX = personCenterX - outfitWidth / 2;
+        outfitY = minY + personHeight * 0.15; // Start from chest area
+      } else if (outfit.category === 'top') {
+        // For tops, cover upper torso
+        outfitScale = personWidth * 0.75 / outfitImage.width;
+        outfitWidth = outfitImage.width * outfitScale;
+        outfitHeight = outfitImage.height * outfitScale;
+        outfitX = personCenterX - outfitWidth / 2;
+        outfitY = minY + personHeight * 0.2; // Chest area
+      } else {
+        // Default positioning
+        outfitScale = personWidth * 0.7 / outfitImage.width;
+        outfitWidth = outfitImage.width * outfitScale;
+        outfitHeight = outfitImage.height * outfitScale;
+        outfitX = personCenterX - outfitWidth / 2;
+        outfitY = minY + personHeight * 0.25;
+      }
+      
+      // Create outfit layer with proper masking
+      const outfitCanvas = document.createElement('canvas');
+      const outfitCtx = outfitCanvas.getContext('2d');
+      if (!outfitCtx) throw new Error('Could not get outfit canvas context');
+      
+      outfitCanvas.width = userImage.width;
+      outfitCanvas.height = userImage.height;
+      
+      // Draw the outfit at calculated position
+      outfitCtx.drawImage(outfitImage, outfitX, outfitY, outfitWidth, outfitHeight);
+      
+      // Apply sophisticated blending
+      const outfitImageData = outfitCtx.getImageData(0, 0, outfitCanvas.width, outfitCanvas.height);
+      const outfitData = outfitImageData.data;
       const userImageData = outputCtx.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
       const userData = userImageData.data;
       
-      // Get the processed outfit data
-      const finalOutfitData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-      const outfitData = finalOutfitData.data;
-      
-      // Blend outfit with user image in clothing areas
-      for (let i = 0; i < userData.length; i += 4) {
-        const pixelIndex = i / 4;
-        const personAlpha = personMask.data[pixelIndex];
-        const outfitAlpha = outfitData[i + 3] / 255;
-        
-        // If we have both person and outfit in this pixel, blend them
-        if (personAlpha > 50 && outfitAlpha > 0.1) {
-          // Blend the colors based on outfit strength
-          const blendFactor = 0.7; // How much outfit to show
-          userData[i] = Math.round(userData[i] * (1 - blendFactor) + outfitData[i] * blendFactor);     // R
-          userData[i + 1] = Math.round(userData[i + 1] * (1 - blendFactor) + outfitData[i + 1] * blendFactor); // G
-          userData[i + 2] = Math.round(userData[i + 2] * (1 - blendFactor) + outfitData[i + 2] * blendFactor); // B
+      // Enhanced blending algorithm
+      for (let y = 0; y < userImage.height; y++) {
+        for (let x = 0; x < userImage.width; x++) {
+          const idx = y * userImage.width + x;
+          const pixelIdx = idx * 4;
+          
+          const personMaskValue = personMask.data[idx];
+          const outfitAlpha = outfitData[pixelIdx + 3];
+          
+          // Only blend where person is detected and outfit has content
+          if (personMaskValue > 100 && outfitAlpha > 50) {
+            // Calculate distance from outfit center for natural falloff
+            const centerX = outfitX + outfitWidth / 2;
+            const centerY = outfitY + outfitHeight / 2;
+            const distanceFromCenter = Math.sqrt(
+              Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
+            );
+            const maxDistance = Math.max(outfitWidth, outfitHeight) / 2;
+            const falloff = Math.max(0, 1 - (distanceFromCenter / maxDistance));
+            
+            // Adaptive blending based on outfit type and position
+            let blendStrength = 0.85;
+            if (outfit.category === 'dress') {
+              // Stronger blending for dresses
+              blendStrength = 0.9;
+            } else if (outfit.category === 'top') {
+              // Medium blending for tops
+              blendStrength = 0.8;
+            }
+            
+            // Apply falloff and person mask strength
+            const finalBlend = blendStrength * falloff * (personMaskValue / 255);
+            
+            // Smooth color blending with lighting preservation
+            const userBrightness = (userData[pixelIdx] + userData[pixelIdx + 1] + userData[pixelIdx + 2]) / 3;
+            const outfitBrightness = (outfitData[pixelIdx] + outfitData[pixelIdx + 1] + outfitData[pixelIdx + 2]) / 3;
+            const lightingFactor = userBrightness / Math.max(outfitBrightness, 1);
+            
+            // Blend colors with lighting preservation
+            userData[pixelIdx] = Math.round(
+              userData[pixelIdx] * (1 - finalBlend) + 
+              (outfitData[pixelIdx] * lightingFactor) * finalBlend
+            );
+            userData[pixelIdx + 1] = Math.round(
+              userData[pixelIdx + 1] * (1 - finalBlend) + 
+              (outfitData[pixelIdx + 1] * lightingFactor) * finalBlend
+            );
+            userData[pixelIdx + 2] = Math.round(
+              userData[pixelIdx + 2] * (1 - finalBlend) + 
+              (outfitData[pixelIdx + 2] * lightingFactor) * finalBlend
+            );
+          }
         }
       }
       
