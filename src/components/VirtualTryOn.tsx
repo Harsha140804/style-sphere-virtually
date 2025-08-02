@@ -95,50 +95,119 @@ export const VirtualTryOn = () => {
       const blob = await response.blob();
       const userImage = await loadImage(blob);
       
-      // Remove background from user image
-      const userWithoutBg = await removeBackground(userImage);
-      const userNoBgImage = await loadImage(userWithoutBg);
+      // Get segmentation result to find person mask
+      const { pipeline } = await import('@huggingface/transformers');
+      const segmenter = await pipeline('image-segmentation', 'Xenova/segformer-b0-finetuned-ade-512-512', {
+        device: 'webgpu',
+      });
+      
+      // Convert to canvas and get base64
+      const inputCanvas = document.createElement('canvas');
+      const inputCtx = inputCanvas.getContext('2d');
+      if (!inputCtx) throw new Error('Could not get input canvas context');
+      
+      inputCanvas.width = userImage.width;
+      inputCanvas.height = userImage.height;
+      inputCtx.drawImage(userImage, 0, 0);
+      const imageData = inputCanvas.toDataURL('image/jpeg', 0.8);
+      
+      // Get segmentation masks
+      const segmentationResult = await segmenter(imageData);
+      
+      // Find person mask
+      const personMask = segmentationResult.find((segment: any) => segment.label === 'person')?.mask;
+      if (!personMask) {
+        throw new Error('Could not detect person in image');
+      }
       
       // Load the outfit image
       const outfitResponse = await fetch(outfit.image);
       const outfitBlob = await outfitResponse.blob();
       const outfitImage = await loadImage(outfitBlob);
       
-      // Create composite image with realistic overlay
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not get canvas context');
+      // Create the final composite
+      const outputCanvas = document.createElement('canvas');
+      const outputCtx = outputCanvas.getContext('2d');
+      if (!outputCtx) throw new Error('Could not get output canvas context');
       
-      // Set canvas size based on user image
-      canvas.width = userNoBgImage.width;
-      canvas.height = userNoBgImage.height;
+      outputCanvas.width = userImage.width;
+      outputCanvas.height = userImage.height;
       
       // Draw white background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      outputCtx.fillStyle = '#ffffff';
+      outputCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
       
-      // Calculate outfit positioning and scaling based on user body
+      // Calculate outfit positioning based on person detection
       const outfitScale = Math.min(
-        canvas.width * 0.6 / outfitImage.width,
-        canvas.height * 0.7 / outfitImage.height
+        outputCanvas.width * 0.4 / outfitImage.width,
+        outputCanvas.height * 0.6 / outfitImage.height
       );
       
       const outfitWidth = outfitImage.width * outfitScale;
       const outfitHeight = outfitImage.height * outfitScale;
-      const outfitX = (canvas.width - outfitWidth) / 2;
-      const outfitY = canvas.height * 0.15; // Position outfit on upper body
       
-      // Draw outfit first (behind the person)
-      ctx.globalAlpha = 0.9;
-      ctx.drawImage(outfitImage, outfitX, outfitY, outfitWidth, outfitHeight);
+      // Position outfit on torso area (approximately)
+      const outfitX = (outputCanvas.width - outfitWidth) / 2;
+      const outfitY = outputCanvas.height * 0.2; // Upper body area
       
-      // Reset alpha and draw person on top
-      ctx.globalAlpha = 1.0;
-      ctx.drawImage(userNoBgImage, 0, 0);
+      // Create a temporary canvas for outfit with person-shaped mask
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      if (!tempCtx) throw new Error('Could not get temp canvas context');
+      
+      tempCanvas.width = outputCanvas.width;
+      tempCanvas.height = outputCanvas.height;
+      
+      // Draw scaled outfit
+      tempCtx.drawImage(outfitImage, outfitX, outfitY, outfitWidth, outfitHeight);
+      
+      // Apply person mask to the outfit
+      const tempImageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+      const tempData = tempImageData.data;
+      
+      // Use person mask to show outfit only where person is
+      for (let i = 0; i < personMask.data.length; i++) {
+        const alpha = personMask.data[i];
+        const pixelIndex = i * 4;
+        // Make outfit visible only where person is detected
+        tempData[pixelIndex + 3] = Math.min(tempData[pixelIndex + 3], alpha);
+      }
+      
+      tempCtx.putImageData(tempImageData, 0, 0);
+      
+      // Now composite everything
+      // First draw the background (original image with person removed for clothing area)
+      outputCtx.drawImage(userImage, 0, 0);
+      
+      // Create mask for clothing area and blend the outfit
+      const userImageData = outputCtx.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
+      const userData = userImageData.data;
+      
+      // Get the processed outfit data
+      const finalOutfitData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+      const outfitData = finalOutfitData.data;
+      
+      // Blend outfit with user image in clothing areas
+      for (let i = 0; i < userData.length; i += 4) {
+        const pixelIndex = i / 4;
+        const personAlpha = personMask.data[pixelIndex];
+        const outfitAlpha = outfitData[i + 3] / 255;
+        
+        // If we have both person and outfit in this pixel, blend them
+        if (personAlpha > 50 && outfitAlpha > 0.1) {
+          // Blend the colors based on outfit strength
+          const blendFactor = 0.7; // How much outfit to show
+          userData[i] = Math.round(userData[i] * (1 - blendFactor) + outfitData[i] * blendFactor);     // R
+          userData[i + 1] = Math.round(userData[i + 1] * (1 - blendFactor) + outfitData[i + 1] * blendFactor); // G
+          userData[i + 2] = Math.round(userData[i + 2] * (1 - blendFactor) + outfitData[i + 2] * blendFactor); // B
+        }
+      }
+      
+      outputCtx.putImageData(userImageData, 0, 0);
       
       // Convert canvas to blob and create URL
       const resultBlob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((blob) => {
+        outputCanvas.toBlob((blob) => {
           if (blob) resolve(blob);
           else reject(new Error('Failed to create result blob'));
         }, 'image/png', 1.0);
