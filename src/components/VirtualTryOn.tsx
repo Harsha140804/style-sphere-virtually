@@ -12,7 +12,7 @@ import { useTryOnApi } from '@/hooks/useTryOnApi';
 import { Outfit, TryOnStep } from '@/types/tryOn';
 
 // TODO: This should be stored in Supabase secrets
-const TEMP_API_KEY = process.env.VITE_REPLICATE_API_KEY || '';
+const TEMP_API_KEY = import.meta.env.VITE_REPLICATE_API_KEY || '';
 
 export const VirtualTryOn = () => {
   const [currentStep, setCurrentStep] = useState<TryOnStep>('upload');
