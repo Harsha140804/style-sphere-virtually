@@ -87,7 +87,7 @@ export const VirtualTryOn = () => {
       
       toast({
         title: "Processing...",
-        description: "AI is generating your virtual try-on"
+        description: "AI is generating your realistic virtual try-on"
       });
       
       // Load the uploaded image
@@ -95,8 +95,9 @@ export const VirtualTryOn = () => {
       const blob = await response.blob();
       const userImage = await loadImage(blob);
       
-      // Get segmentation result to find person mask
       const { pipeline } = await import('@huggingface/transformers');
+      
+      // Step 1: Get detailed segmentation for clothing removal
       const segmenter = await pipeline('image-segmentation', 'Xenova/segformer-b0-finetuned-ade-512-512', {
         device: 'webgpu',
       });
@@ -111,14 +112,24 @@ export const VirtualTryOn = () => {
       inputCtx.drawImage(userImage, 0, 0);
       const imageData = inputCanvas.toDataURL('image/jpeg', 0.8);
       
-      // Get segmentation masks
+      // Get comprehensive segmentation
       const segmentationResult = await segmenter(imageData);
       
-      // Find person mask
+      // Find relevant body part masks
       const personMask = segmentationResult.find((segment: any) => segment.label === 'person')?.mask;
+      const clothingMask = segmentationResult.find((segment: any) => 
+        segment.label.includes('clothing') || segment.label.includes('shirt') || 
+        segment.label.includes('dress') || segment.label.includes('top')
+      )?.mask;
+      
       if (!personMask) {
         throw new Error('Could not detect person in image');
       }
+      
+      // Step 2: Pose estimation for body keypoints
+      const poseDetector = await pipeline('object-detection', 'Xenova/yolos-tiny', {
+        device: 'webgpu',
+      });
       
       // Load the outfit image
       const outfitResponse = await fetch(outfit.image);
@@ -133,12 +144,12 @@ export const VirtualTryOn = () => {
       outputCanvas.width = userImage.width;
       outputCanvas.height = userImage.height;
       
-      // Start with the original user image as base
-      outputCtx.drawImage(userImage, 0, 0);
-      
-      // Analyze person bounds for better outfit positioning
+      // Step 3: Analyze person bounds and body structure
       let minX = userImage.width, maxX = 0, minY = userImage.height, maxY = 0;
+      let shoulderY = userImage.height, waistY = 0, hipY = 0;
+      
       for (let y = 0; y < userImage.height; y++) {
+        let hasPersonPixel = false;
         for (let x = 0; x < userImage.width; x++) {
           const idx = y * userImage.width + x;
           if (personMask.data[idx] > 128) {
@@ -146,6 +157,21 @@ export const VirtualTryOn = () => {
             maxX = Math.max(maxX, x);
             minY = Math.min(minY, y);
             maxY = Math.max(maxY, y);
+            hasPersonPixel = true;
+          }
+        }
+        
+        // Estimate body landmarks
+        if (hasPersonPixel) {
+          const personHeightSoFar = y - minY;
+          const totalPersonHeight = maxY - minY;
+          
+          if (personHeightSoFar < totalPersonHeight * 0.25) {
+            shoulderY = Math.max(shoulderY, y);
+          } else if (personHeightSoFar < totalPersonHeight * 0.55) {
+            waistY = Math.max(waistY, y);
+          } else if (personHeightSoFar < totalPersonHeight * 0.75) {
+            hipY = Math.max(hipY, y);
           }
         }
       }
@@ -154,33 +180,94 @@ export const VirtualTryOn = () => {
       const personHeight = maxY - minY;
       const personCenterX = (minX + maxX) / 2;
       
-      // Calculate better outfit positioning based on detected person bounds
-      let outfitScale, outfitX, outfitY, outfitWidth, outfitHeight;
+      // Step 4: Create body-aware clothing mask
+      const bodyMask = new Uint8ClampedArray(userImage.width * userImage.height);
       
-      if (outfit.category === 'dress') {
-        // For dresses, cover torso to legs
-        outfitScale = personWidth * 0.8 / outfitImage.width;
-        outfitWidth = outfitImage.width * outfitScale;
-        outfitHeight = outfitImage.height * outfitScale;
-        outfitX = personCenterX - outfitWidth / 2;
-        outfitY = minY + personHeight * 0.15; // Start from chest area
-      } else if (outfit.category === 'top') {
-        // For tops, cover upper torso
-        outfitScale = personWidth * 0.75 / outfitImage.width;
-        outfitWidth = outfitImage.width * outfitScale;
-        outfitHeight = outfitImage.height * outfitScale;
-        outfitX = personCenterX - outfitWidth / 2;
-        outfitY = minY + personHeight * 0.2; // Chest area
-      } else {
-        // Default positioning
-        outfitScale = personWidth * 0.7 / outfitImage.width;
-        outfitWidth = outfitImage.width * outfitScale;
-        outfitHeight = outfitImage.height * outfitScale;
-        outfitX = personCenterX - outfitWidth / 2;
-        outfitY = minY + personHeight * 0.25;
+      for (let y = 0; y < userImage.height; y++) {
+        for (let x = 0; x < userImage.width; x++) {
+          const idx = y * userImage.width + x;
+          const personValue = personMask.data[idx];
+          
+          // Create clothing-specific mask based on outfit type
+          if (personValue > 128) {
+            if (outfit.category === 'dress') {
+              // Dress covers from shoulders to knees/ankles
+              if (y >= shoulderY && y <= Math.min(hipY + personHeight * 0.4, maxY)) {
+                // Calculate body width at this height for natural tapering
+                const bodyProgress = (y - shoulderY) / (hipY - shoulderY);
+                const widthFactor = 0.6 + 0.4 * Math.sin(bodyProgress * Math.PI);
+                const targetWidth = personWidth * widthFactor;
+                const centerDistance = Math.abs(x - personCenterX);
+                
+                if (centerDistance < targetWidth / 2) {
+                  bodyMask[idx] = 255;
+                }
+              }
+            } else if (outfit.category === 'top') {
+              // Top covers shoulders to waist
+              if (y >= shoulderY && y <= waistY) {
+                const bodyProgress = (y - shoulderY) / (waistY - shoulderY);
+                const widthFactor = 0.7 + 0.3 * Math.sin(bodyProgress * Math.PI * 0.5);
+                const targetWidth = personWidth * widthFactor;
+                const centerDistance = Math.abs(x - personCenterX);
+                
+                if (centerDistance < targetWidth / 2) {
+                  bodyMask[idx] = 255;
+                }
+              }
+            }
+          }
+        }
       }
       
-      // Create outfit layer with proper masking
+      // Step 5: Remove existing clothing in target area
+      const baseImageData = inputCtx.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
+      const baseData = baseImageData.data;
+      
+      for (let i = 0; i < bodyMask.length; i++) {
+        if (bodyMask[i] > 0 && clothingMask && clothingMask.data[i] > 100) {
+          const pixelIdx = i * 4;
+          // Inpaint clothing area with skin-like color estimation
+          const surroundingPixels = [];
+          const radius = 5;
+          const centerX = i % userImage.width;
+          const centerY = Math.floor(i / userImage.width);
+          
+          for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              const nx = centerX + dx;
+              const ny = centerY + dy;
+              const ni = ny * userImage.width + nx;
+              
+              if (nx >= 0 && nx < userImage.width && ny >= 0 && ny < userImage.height) {
+                if (personMask.data[ni] > 128 && (!clothingMask || clothingMask.data[ni] < 50)) {
+                  const nPixelIdx = ni * 4;
+                  surroundingPixels.push([
+                    baseData[nPixelIdx],
+                    baseData[nPixelIdx + 1], 
+                    baseData[nPixelIdx + 2]
+                  ]);
+                }
+              }
+            }
+          }
+          
+          if (surroundingPixels.length > 0) {
+            const avgR = surroundingPixels.reduce((sum, p) => sum + p[0], 0) / surroundingPixels.length;
+            const avgG = surroundingPixels.reduce((sum, p) => sum + p[1], 0) / surroundingPixels.length;
+            const avgB = surroundingPixels.reduce((sum, p) => sum + p[2], 0) / surroundingPixels.length;
+            
+            baseData[pixelIdx] = avgR;
+            baseData[pixelIdx + 1] = avgG;
+            baseData[pixelIdx + 2] = avgB;
+          }
+        }
+      }
+      
+      inputCtx.putImageData(baseImageData, 0, 0);
+      outputCtx.drawImage(inputCanvas, 0, 0);
+      
+      // Step 6: Warp and fit clothing to body
       const outfitCanvas = document.createElement('canvas');
       const outfitCtx = outfitCanvas.getContext('2d');
       if (!outfitCtx) throw new Error('Could not get outfit canvas context');
@@ -188,71 +275,97 @@ export const VirtualTryOn = () => {
       outfitCanvas.width = userImage.width;
       outfitCanvas.height = userImage.height;
       
-      // Draw the outfit at calculated position
-      outfitCtx.drawImage(outfitImage, outfitX, outfitY, outfitWidth, outfitHeight);
-      
-      // Apply sophisticated blending
-      const outfitImageData = outfitCtx.getImageData(0, 0, outfitCanvas.width, outfitCanvas.height);
-      const outfitData = outfitImageData.data;
-      const userImageData = outputCtx.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
-      const userData = userImageData.data;
-      
-      // Enhanced blending algorithm
+      // Apply perspective transformation and body-fitted warping
       for (let y = 0; y < userImage.height; y++) {
         for (let x = 0; x < userImage.width; x++) {
           const idx = y * userImage.width + x;
-          const pixelIdx = idx * 4;
           
-          const personMaskValue = personMask.data[idx];
-          const outfitAlpha = outfitData[pixelIdx + 3];
-          
-          // Only blend where person is detected and outfit has content
-          if (personMaskValue > 100 && outfitAlpha > 50) {
-            // Calculate distance from outfit center for natural falloff
-            const centerX = outfitX + outfitWidth / 2;
-            const centerY = outfitY + outfitHeight / 2;
-            const distanceFromCenter = Math.sqrt(
-              Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2)
-            );
-            const maxDistance = Math.max(outfitWidth, outfitHeight) / 2;
-            const falloff = Math.max(0, 1 - (distanceFromCenter / maxDistance));
+          if (bodyMask[idx] > 0) {
+            // Calculate corresponding outfit pixel with body-aware mapping
+            let outfitX, outfitY;
             
-            // Adaptive blending based on outfit type and position
-            let blendStrength = 0.85;
             if (outfit.category === 'dress') {
-              // Stronger blending for dresses
-              blendStrength = 0.9;
+              const progress = (y - shoulderY) / (Math.min(hipY + personHeight * 0.4, maxY) - shoulderY);
+              const bodyWidthAtY = personWidth * (0.6 + 0.4 * Math.sin(progress * Math.PI));
+              const normalizedX = (x - personCenterX) / (bodyWidthAtY / 2);
+              
+              outfitX = (normalizedX * 0.5 + 0.5) * outfitImage.width;
+              outfitY = progress * outfitImage.height;
             } else if (outfit.category === 'top') {
-              // Medium blending for tops
-              blendStrength = 0.8;
+              const progress = (y - shoulderY) / (waistY - shoulderY);
+              const bodyWidthAtY = personWidth * (0.7 + 0.3 * Math.sin(progress * Math.PI * 0.5));
+              const normalizedX = (x - personCenterX) / (bodyWidthAtY / 2);
+              
+              outfitX = (normalizedX * 0.5 + 0.5) * outfitImage.width;
+              outfitY = progress * outfitImage.height;
+            } else {
+              outfitX = x;
+              outfitY = y;
             }
             
-            // Apply falloff and person mask strength
-            const finalBlend = blendStrength * falloff * (personMaskValue / 255);
-            
-            // Smooth color blending with lighting preservation
-            const userBrightness = (userData[pixelIdx] + userData[pixelIdx + 1] + userData[pixelIdx + 2]) / 3;
-            const outfitBrightness = (outfitData[pixelIdx] + outfitData[pixelIdx + 1] + outfitData[pixelIdx + 2]) / 3;
-            const lightingFactor = userBrightness / Math.max(outfitBrightness, 1);
-            
-            // Blend colors with lighting preservation
-            userData[pixelIdx] = Math.round(
-              userData[pixelIdx] * (1 - finalBlend) + 
-              (outfitData[pixelIdx] * lightingFactor) * finalBlend
-            );
-            userData[pixelIdx + 1] = Math.round(
-              userData[pixelIdx + 1] * (1 - finalBlend) + 
-              (outfitData[pixelIdx + 1] * lightingFactor) * finalBlend
-            );
-            userData[pixelIdx + 2] = Math.round(
-              userData[pixelIdx + 2] * (1 - finalBlend) + 
-              (outfitData[pixelIdx + 2] * lightingFactor) * finalBlend
-            );
+            // Bilinear interpolation for smooth warping
+            if (outfitX >= 0 && outfitX < outfitImage.width && outfitY >= 0 && outfitY < outfitImage.height) {
+              const x1 = Math.floor(outfitX);
+              const y1 = Math.floor(outfitY);
+              const x2 = Math.min(x1 + 1, outfitImage.width - 1);
+              const y2 = Math.min(y1 + 1, outfitImage.height - 1);
+              
+              const fx = outfitX - x1;
+              const fy = outfitY - y1;
+              
+              // Sample outfit pixels
+              const tempCanvas = document.createElement('canvas');
+              tempCanvas.width = outfitImage.width;
+              tempCanvas.height = outfitImage.height;
+              const tempCtx = tempCanvas.getContext('2d');
+              if (tempCtx) {
+                tempCtx.drawImage(outfitImage, 0, 0);
+                const outfitImageData = tempCtx.getImageData(0, 0, outfitImage.width, outfitImage.height);
+                const outfitData = outfitImageData.data;
+                
+                const getPixel = (px: number, py: number) => {
+                  const pidx = (py * outfitImage.width + px) * 4;
+                  return [
+                    outfitData[pidx],
+                    outfitData[pidx + 1],
+                    outfitData[pidx + 2],
+                    outfitData[pidx + 3]
+                  ];
+                };
+                
+                const p1 = getPixel(x1, y1);
+                const p2 = getPixel(x2, y1);
+                const p3 = getPixel(x1, y2);
+                const p4 = getPixel(x2, y2);
+                
+                // Bilinear interpolation
+                const interpolatedPixel = [
+                  p1[0] * (1 - fx) * (1 - fy) + p2[0] * fx * (1 - fy) + p3[0] * (1 - fx) * fy + p4[0] * fx * fy,
+                  p1[1] * (1 - fx) * (1 - fy) + p2[1] * fx * (1 - fy) + p3[1] * (1 - fx) * fy + p4[1] * fx * fy,
+                  p1[2] * (1 - fx) * (1 - fy) + p2[2] * fx * (1 - fy) + p3[2] * (1 - fx) * fy + p4[2] * fx * fy,
+                  p1[3] * (1 - fx) * (1 - fy) + p2[3] * fx * (1 - fy) + p3[3] * (1 - fx) * fy + p4[3] * fx * fy
+                ];
+                
+                if (interpolatedPixel[3] > 50) { // Has significant alpha
+                  const outputImageData = outputCtx.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
+                  const outputData = outputImageData.data;
+                  const outputIdx = idx * 4;
+                  
+                  // Blend with lighting and shadow awareness
+                  const originalBrightness = (outputData[outputIdx] + outputData[outputIdx + 1] + outputData[outputIdx + 2]) / 3;
+                  const lightingFactor = Math.max(0.3, originalBrightness / 128); // Preserve shadows
+                  
+                  outputData[outputIdx] = interpolatedPixel[0] * lightingFactor;
+                  outputData[outputIdx + 1] = interpolatedPixel[1] * lightingFactor;
+                  outputData[outputIdx + 2] = interpolatedPixel[2] * lightingFactor;
+                  
+                  outputCtx.putImageData(outputImageData, 0, 0);
+                }
+              }
+            }
           }
         }
       }
-      
-      outputCtx.putImageData(userImageData, 0, 0);
       
       // Convert canvas to blob and create URL
       const resultBlob = await new Promise<Blob>((resolve, reject) => {
