@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Camera, Sparkles, Download, ArrowLeft } from 'lucide-react';
+import { Upload, Camera, Sparkles, Download, ArrowLeft, Video, VideoOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { removeBackground, loadImage } from '@/lib/background-removal';
@@ -29,6 +29,9 @@ export const VirtualTryOn = () => {
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -65,6 +68,72 @@ export const VirtualTryOn = () => {
       setIsProcessing(false);
     }
   }, [toast]);
+
+  const startCamera = useCallback(async () => {
+    try {
+      setIsProcessing(true);
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'user'
+        }
+      });
+      
+      setStream(mediaStream);
+      setIsCameraActive(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      
+      toast({
+        title: "Camera activated",
+        description: "Position yourself in the frame and capture your photo"
+      });
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      toast({
+        title: "Camera access denied",
+        description: "Please allow camera access to use virtual try-on",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [toast]);
+
+  const stopCamera = useCallback(() => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraActive(false);
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }, [stream]);
+
+  const capturePhoto = useCallback(() => {
+    if (!videoRef.current) return;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    ctx.drawImage(videoRef.current, 0, 0);
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const imageUrl = URL.createObjectURL(blob);
+        setUploadedImage(imageUrl);
+        stopCamera();
+        setCurrentStep('gender');
+      }
+    }, 'image/jpeg', 0.8);
+  }, [stopCamera]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -240,6 +309,9 @@ export const VirtualTryOn = () => {
     setSelectedGender(null);
     setSelectedOutfit(null);
     setResultImage(null);
+    if (isCameraActive) {
+      stopCamera();
+    }
   };
 
   const goBack = () => {
@@ -253,6 +325,9 @@ export const VirtualTryOn = () => {
       case 'result':
         setCurrentStep('outfits');
         break;
+    }
+    if (isCameraActive) {
+      stopCamera();
     }
   };
 
@@ -306,7 +381,7 @@ export const VirtualTryOn = () => {
         {/* Step Content */}
         {currentStep === 'upload' && (
           <Card className="p-8">
-            <div className="text-center">
+            <div className="text-center space-y-6">
               <div className="w-24 h-24 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-6">
                 <Upload className="w-12 h-12 text-white" />
               </div>
@@ -315,6 +390,35 @@ export const VirtualTryOn = () => {
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                 Upload a clear, full-body photo of yourself to get started with virtual try-on
               </p>
+
+              {/* Camera Section */}
+              {isCameraActive && (
+                <div className="space-y-4">
+                  <div className="relative max-w-md mx-auto">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-auto rounded-lg border-2 border-primary"
+                    />
+                  </div>
+                  <div className="flex gap-4 justify-center">
+                    <Button onClick={capturePhoto} variant="hero" size="lg">
+                      <Camera className="w-5 h-5 mr-2" />
+                      Capture Photo
+                    </Button>
+                    <Button onClick={stopCamera} variant="outline" size="lg">
+                      <VideoOff className="w-5 h-5 mr-2" />
+                      Stop Camera
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {isCameraActive && <div className="text-sm text-muted-foreground">
+                Position yourself in the frame and click "Capture Photo" when ready
+              </div>}
 
               <div className="space-y-4">
                 <input
@@ -334,6 +438,19 @@ export const VirtualTryOn = () => {
                   <Upload className="w-5 h-5 mr-2" />
                   {isProcessing ? 'Processing...' : 'Choose Photo'}
                 </Button>
+
+                {!isCameraActive && (
+                  <Button
+                    size="lg"
+                    onClick={startCamera}
+                    disabled={isProcessing}
+                    variant="elegant"
+                    className="min-w-[200px]"
+                  >
+                    <Video className="w-5 h-5 mr-2" />
+                    Use Camera
+                  </Button>
+                )}
 
                 <div className="text-sm text-muted-foreground">
                   Supported formats: JPG, PNG, WEBP

@@ -43,7 +43,19 @@ export const HeroSection = () => {
               variant="hero" 
               size="hero" 
               className="min-w-[200px]"
-              onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => {
+                const tryOnSection = document.getElementById('try-on');
+                if (tryOnSection) {
+                  tryOnSection.scrollIntoView({ behavior: 'smooth' });
+                  // Small delay to ensure scroll completes before focusing
+                  setTimeout(() => {
+                    const tryOnElement = tryOnSection.querySelector('input[type="file"]') as HTMLElement;
+                    if (tryOnElement) {
+                      tryOnElement.focus();
+                    }
+                  }, 1000);
+                }
+              }}
             >
               <Camera className="w-5 h-5 mr-2" />
               Start Virtual Try-On
@@ -52,7 +64,12 @@ export const HeroSection = () => {
               variant="elegant" 
               size="lg" 
               className="min-w-[200px]"
-              onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => {
+                const tryOnSection = document.getElementById('try-on');
+                if (tryOnSection) {
+                  tryOnSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
             >
               <Upload className="w-5 h-5 mr-2" />
               Upload Photo
