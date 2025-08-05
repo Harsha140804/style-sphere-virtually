@@ -7,18 +7,20 @@ import { TryOnResult } from './TryOnResult';
 import { ImageUpload } from './virtual-tryon/ImageUpload';
 import { GenderSelection } from './virtual-tryon/GenderSelection';
 import { ProcessingStatus } from './virtual-tryon/ProcessingStatus';
+import { ApiKeyInput } from './virtual-tryon/ApiKeyInput';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useTryOnApi } from '@/hooks/useTryOnApi';
 import { Outfit, TryOnStep } from '@/types/tryOn';
 
-// TODO: This should be stored in Supabase secrets
-const TEMP_API_KEY = import.meta.env.VITE_REPLICATE_API_KEY || '';
+// API key will be handled via Supabase secrets
+// For now, users can input their key in the UI
 
 export const VirtualTryOn = () => {
   const [currentStep, setCurrentStep] = useState<TryOnStep>('upload');
   const [selectedGender, setSelectedGender] = useState<'male' | 'female' | null>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
   const [resultImage, setResultImage] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('replicate_api_key'));
 
   // Custom hooks for modular functionality
   const {
@@ -43,7 +45,7 @@ export const VirtualTryOn = () => {
   };
 
   const handleOutfitSelect = async (outfit: Outfit) => {
-    if (!uploadedImage || !selectedGender) return;
+    if (!uploadedImage || !selectedGender || !apiKey) return;
 
     setSelectedOutfit(outfit);
     setCurrentStep('processing');
@@ -54,7 +56,7 @@ export const VirtualTryOn = () => {
         clothingImageUrl: outfit.image,
         gender: selectedGender,
       },
-      TEMP_API_KEY
+      apiKey
     );
 
     if (result) {
@@ -64,6 +66,10 @@ export const VirtualTryOn = () => {
       // Error already shown by hook
       setCurrentStep('outfits');
     }
+  };
+
+  const handleApiKeySubmit = (key: string) => {
+    setApiKey(key);
   };
 
   const resetTryOn = () => {
@@ -157,42 +163,48 @@ export const VirtualTryOn = () => {
         </div>
 
         {/* Step Content */}
-        {currentStep === 'upload' && (
-          <ImageUpload
-            imagePreview={imagePreview}
-            isValidImage={isValidImage}
-            onFileChange={handleFileChange}
-            onClearImage={clearImage}
-          />
-        )}
+        {!apiKey ? (
+          <ApiKeyInput onApiKeySubmit={handleApiKeySubmit} />
+        ) : (
+          <>
+            {currentStep === 'upload' && (
+              <ImageUpload
+                imagePreview={imagePreview}
+                isValidImage={isValidImage}
+                onFileChange={handleFileChange}
+                onClearImage={clearImage}
+              />
+            )}
 
-        {currentStep === 'gender' && (
-          <GenderSelection onGenderSelect={handleGenderSelect} />
-        )}
+            {currentStep === 'gender' && (
+              <GenderSelection onGenderSelect={handleGenderSelect} />
+            )}
 
-        {currentStep === 'outfits' && selectedGender && (
-          <OutfitCatalog
-            gender={selectedGender}
-            onOutfitSelect={handleOutfitSelect}
-            isProcessing={false}
-          />
-        )}
+            {currentStep === 'outfits' && selectedGender && (
+              <OutfitCatalog
+                gender={selectedGender}
+                onOutfitSelect={handleOutfitSelect}
+                isProcessing={false}
+              />
+            )}
 
-        {currentStep === 'processing' && (
-          <ProcessingStatus
-            progress={progress}
-            predictionId={predictionId}
-          />
-        )}
+            {currentStep === 'processing' && (
+              <ProcessingStatus
+                progress={progress}
+                predictionId={predictionId}
+              />
+            )}
 
-        {currentStep === 'result' && resultImage && selectedOutfit && imagePreview && (
-          <TryOnResult
-            originalImage={imagePreview}
-            resultImage={resultImage}
-            outfit={selectedOutfit}
-            onTryAnother={() => setCurrentStep('outfits')}
-            onStartOver={resetTryOn}
-          />
+            {currentStep === 'result' && resultImage && selectedOutfit && imagePreview && (
+              <TryOnResult
+                originalImage={imagePreview}
+                resultImage={resultImage}
+                outfit={selectedOutfit}
+                onTryAnother={() => setCurrentStep('outfits')}
+                onStartOver={resetTryOn}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
