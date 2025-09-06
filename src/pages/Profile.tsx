@@ -101,7 +101,25 @@ const Profile = () => {
                     <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="space-y-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            toast({
+                              title: "Profile Photo Updated",
+                              description: `New profile photo uploaded successfully!`
+                            });
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
                       <Camera className="w-4 h-4 mr-2" />
                       Change Photo
                     </Button>
@@ -269,7 +287,16 @@ const Profile = () => {
                         {color}
                       </span>
                     ))}
-                    <Button variant="outline" size="sm">+ Add Color</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toast({
+                        title: "Add Color",
+                        description: "Color picker opened - select your favorite colors"
+                      })}
+                    >
+                      + Add Color
+                    </Button>
                   </div>
                 </div>
 
@@ -281,7 +308,16 @@ const Profile = () => {
                         {brand}
                       </span>
                     ))}
-                    <Button variant="outline" size="sm">+ Add Brand</Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toast({
+                        title: "Add Brand",
+                        description: "Brand selector opened - choose your preferred brands"
+                      })}
+                    >
+                      + Add Brand
+                    </Button>
                   </div>
                 </div>
 

@@ -117,11 +117,36 @@ const Social = () => {
                 />
                 <div className="flex justify-between items-center">
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            toast({
+                              title: "Photo Added",
+                              description: `${file.name} ready to post!`
+                            });
+                          }
+                        };
+                        input.click();
+                      }}
+                    >
                       <Camera className="w-4 h-4 mr-2" />
                       Add Photo
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => toast({
+                        title: "Try-On Results",
+                        description: "Select from your recent virtual try-on sessions"
+                      })}
+                    >
                       <Plus className="w-4 h-4 mr-2" />
                       Try-On Result
                     </Button>
@@ -185,7 +210,10 @@ const Social = () => {
           <TabsContent value="my-posts" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">My Style Posts</h2>
-              <Button>
+              <Button onClick={() => toast({
+                title: "Create New Post",
+                description: "Share your latest outfit or style inspiration!"
+              })}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Post
               </Button>
@@ -216,7 +244,10 @@ const Social = () => {
           <TabsContent value="lookbooks" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">My Lookbooks</h2>
-              <Button onClick={handleCreateLookbook}>
+              <Button onClick={() => toast({
+                title: "Create Lookbook",
+                description: "Organize your favorite outfits into a themed collection!"
+              })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Lookbook
               </Button>
@@ -244,8 +275,27 @@ const Social = () => {
                       </Badge>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">Edit</Button>
-                      <Button size="sm" className="flex-1">Share</Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => toast({
+                          title: "Edit Lookbook",
+                          description: `Editing ${lookbook.name} - add or remove items`
+                        })}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => toast({
+                          title: "Share Lookbook",
+                          description: `Sharing ${lookbook.name} with friends!`
+                        })}
+                      >
+                        Share
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

@@ -7,21 +7,23 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Filter, Heart, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useCart } from "@/hooks/useCart";
 
 const Browse = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const { toast } = useToast();
+  const { addToCart } = useCart();
 
   const categories = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
   
   const mockItems = [
-    { id: 1, name: "Floral Summer Dress", category: "Dresses", price: "$89", image: "/placeholder.svg", rating: 4.5 },
-    { id: 2, name: "Classic Denim Jacket", category: "Outerwear", price: "$129", image: "/placeholder.svg", rating: 4.8 },
-    { id: 3, name: "Silk Blouse", category: "Tops", price: "$75", image: "/placeholder.svg", rating: 4.3 },
-    { id: 4, name: "High-Waist Jeans", category: "Bottoms", price: "$95", image: "/placeholder.svg", rating: 4.6 },
-    { id: 5, name: "Ankle Boots", category: "Shoes", price: "$150", image: "/placeholder.svg", rating: 4.7 },
-    { id: 6, name: "Statement Necklace", category: "Accessories", price: "$45", image: "/placeholder.svg", rating: 4.2 },
+    { id: 1, name: "Floral Summer Dress", category: "Dresses", price: "₹7,120", image: "/placeholder.svg", rating: 4.5 },
+    { id: 2, name: "Classic Denim Jacket", category: "Outerwear", price: "₹10,320", image: "/placeholder.svg", rating: 4.8 },
+    { id: 3, name: "Silk Blouse", category: "Tops", price: "₹6,000", image: "/placeholder.svg", rating: 4.3 },
+    { id: 4, name: "High-Waist Jeans", category: "Bottoms", price: "₹7,600", image: "/placeholder.svg", rating: 4.6 },
+    { id: 5, name: "Ankle Boots", category: "Shoes", price: "₹12,000", image: "/placeholder.svg", rating: 4.7 },
+    { id: 6, name: "Statement Necklace", category: "Accessories", price: "₹3,600", image: "/placeholder.svg", rating: 4.2 },
   ];
 
   const filteredItems = mockItems.filter(item => 
@@ -29,10 +31,13 @@ const Browse = () => {
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddToCart = (itemName: string) => {
-    toast({
-      title: "Added to Cart",
-      description: `${itemName} has been added to your cart!`
+  const handleAddToCart = (item: typeof mockItems[0]) => {
+    addToCart({
+      id: item.id.toString(),
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      category: item.category
     });
   };
 
@@ -63,7 +68,14 @@ const Browse = () => {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              onClick={() => toast({
+                title: "Filter Options",
+                description: "Size, color, brand, and price filters coming soon!"
+              })}
+            >
               <Filter className="w-4 h-4" />
               Filter
             </Button>
@@ -118,12 +130,23 @@ const Browse = () => {
                   <Button 
                     size="sm" 
                     className="flex-1"
-                    onClick={() => handleAddToCart(item.name)}
+                    onClick={() => handleAddToCart(item)}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
                     Add to Cart
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Navigate to virtual try-on with this item
+                      window.location.href = '/#try-on';
+                      toast({
+                        title: "Try On Feature",
+                        description: `Ready to try on ${item.name}! Upload your photo to get started.`
+                      });
+                    }}
+                  >
                     Try On
                   </Button>
                 </div>

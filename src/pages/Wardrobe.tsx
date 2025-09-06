@@ -69,11 +69,31 @@ const Wardrobe = () => {
           <TabsContent value="all-items" className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <div className="flex gap-2">
-                <Button onClick={handleAddItem}>
+                <Button onClick={() => toast({
+                  title: "Add Item",
+                  description: "Take a photo or upload from gallery to add to your wardrobe"
+                })}>
                   <Plus className="w-4 h-4 mr-2" />
                   Add Item
                 </Button>
-                <Button variant="outline" onClick={handleAddItem}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        toast({
+                          title: "Photo Uploaded",
+                          description: `${file.name} added to your wardrobe!`
+                        });
+                      }
+                    };
+                    input.click();
+                  }}
+                >
                   <Camera className="w-4 h-4 mr-2" />
                   Upload Photo
                 </Button>
@@ -142,8 +162,26 @@ const Wardrobe = () => {
                       Last worn: {outfit.lastWorn}
                     </div>
                     <div className="flex gap-2 mt-4">
-                      <Button size="sm" className="flex-1">Wear Today</Button>
-                      <Button variant="outline" size="sm">Edit</Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => toast({
+                          title: "Outfit Selected",
+                          description: `${outfit.name} added to today's outfit!`
+                        })}
+                      >
+                        Wear Today
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => toast({
+                          title: "Edit Outfit",
+                          description: `Editing ${outfit.name} - modify items or rename outfit`
+                        })}
+                      >
+                        Edit
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
