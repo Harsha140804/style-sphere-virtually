@@ -2,12 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Search, User, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Link, useLocation } from "react-router-dom";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const location = useLocation();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,29 +42,49 @@ export const Header = () => {
       <div className="container mx-auto px-4 lg:px-6">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">SS</span>
             </div>
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Style Sphere
             </span>
-          </div>
+          </Link>
 
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center space-x-6">
-            <a href="#try-on" className="text-foreground hover:text-primary transition-colors">
+            <Link 
+              to="/#try-on" 
+              className={`text-foreground hover:text-primary transition-colors ${
+                location.pathname === "/" && location.hash === "#try-on" ? "text-primary" : ""
+              }`}
+            >
               Try On
-            </a>
-            <a href="#features" className="text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link 
+              to="/browse" 
+              className={`text-foreground hover:text-primary transition-colors ${
+                location.pathname === "/browse" ? "text-primary" : ""
+              }`}
+            >
               Browse
-            </a>
-            <a href="#wardrobe" className="text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link 
+              to="/wardrobe" 
+              className={`text-foreground hover:text-primary transition-colors ${
+                location.pathname === "/wardrobe" ? "text-primary" : ""
+              }`}
+            >
               Wardrobe
-            </a>
-            <a href="#community" className="text-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link 
+              to="/social" 
+              className={`text-foreground hover:text-primary transition-colors ${
+                location.pathname === "/social" ? "text-primary" : ""
+              }`}
+            >
               Social
-            </a>
+            </Link>
           </nav>
 
           {/* Search Bar - Desktop */}
@@ -94,9 +116,11 @@ export const Header = () => {
             <Button variant="ghost" size="icon" onClick={handleCartClick}>
               <ShoppingBag className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleUserClick}>
-              <User className="w-4 h-4" />
-            </Button>
+            <Link to="/profile">
+              <Button variant="ghost" size="icon">
+                <User className="w-4 h-4" />
+              </Button>
+            </Link>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -138,27 +162,45 @@ export const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
-              <a href="#try-on" className="text-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/#try-on" 
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Try On
-              </a>
-              <a href="#features" className="text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link 
+                to="/browse" 
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Browse
-              </a>
-              <a href="#wardrobe" className="text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link 
+                to="/wardrobe" 
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Wardrobe
-              </a>
-              <a href="#community" className="text-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link 
+                to="/social" 
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Social
-              </a>
+              </Link>
               <div className="pt-2">
-                <Button 
-                  variant="hero" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  Try Now
-                </Button>
+                <Link to="/#try-on">
+                  <Button 
+                    variant="hero" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Try Now
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>
