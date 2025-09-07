@@ -27,20 +27,35 @@ const Browse = () => {
   const { addToCart } = useCart();
   const { addToWishlist, isInWishlist } = useWishlist();
 
-  const categories = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
+  const categories = ["All", "Tops", "Bottoms", "Dresses", "Outerwear"];
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
   const colors = ["Black", "White", "Blue", "Red", "Green", "Pink", "Yellow", "Purple"];
-  const brands = ["Zara", "H&M", "Nike", "Adidas", "Uniqlo", "Forever 21"];
+  const brands = ["Zara", "H&M", "Uniqlo", "Forever 21", "Mango", "COS"];
   
   const mockItems = [
+    // Dresses
     { id: 1, name: "Floral Summer Dress", category: "Dresses", price: 7120, priceText: "₹7,120", image: "/placeholder.svg", rating: 4.5, size: "M", color: "Pink", brand: "Zara" },
-    { id: 2, name: "Classic Denim Jacket", category: "Outerwear", price: 10320, priceText: "₹10,320", image: "/placeholder.svg", rating: 4.8, size: "L", color: "Blue", brand: "H&M" },
-    { id: 3, name: "Silk Blouse", category: "Tops", price: 6000, priceText: "₹6,000", image: "/placeholder.svg", rating: 4.3, size: "S", color: "White", brand: "Uniqlo" },
-    { id: 4, name: "High-Waist Jeans", category: "Bottoms", price: 7600, priceText: "₹7,600", image: "/placeholder.svg", rating: 4.6, size: "M", color: "Blue", brand: "Zara" },
-    { id: 5, name: "Ankle Boots", category: "Shoes", price: 12000, priceText: "₹12,000", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Black", brand: "Nike" },
-    { id: 6, name: "Statement Necklace", category: "Accessories", price: 3600, priceText: "₹3,600", image: "/placeholder.svg", rating: 4.2, size: "One Size", color: "Yellow", brand: "Forever 21" },
-    { id: 7, name: "Cotton T-Shirt", category: "Tops", price: 2500, priceText: "₹2,500", image: "/placeholder.svg", rating: 4.1, size: "L", color: "Green", brand: "Uniqlo" },
-    { id: 8, name: "Leather Jacket", category: "Outerwear", price: 15000, priceText: "₹15,000", image: "/placeholder.svg", rating: 4.9, size: "XL", color: "Black", brand: "Adidas" },
+    { id: 2, name: "Elegant Midi Dress", category: "Dresses", price: 8500, priceText: "₹8,500", image: "/placeholder.svg", rating: 4.6, size: "S", color: "Black", brand: "Mango" },
+    { id: 3, name: "Casual Maxi Dress", category: "Dresses", price: 6200, priceText: "₹6,200", image: "/placeholder.svg", rating: 4.4, size: "L", color: "Blue", brand: "H&M" },
+    { id: 4, name: "Party Cocktail Dress", category: "Dresses", price: 9800, priceText: "₹9,800", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Red", brand: "Zara" },
+    
+    // Tops
+    { id: 5, name: "Silk Blouse", category: "Tops", price: 6000, priceText: "₹6,000", image: "/placeholder.svg", rating: 4.3, size: "S", color: "White", brand: "Uniqlo" },
+    { id: 6, name: "Cotton T-Shirt", category: "Tops", price: 2500, priceText: "₹2,500", image: "/placeholder.svg", rating: 4.1, size: "L", color: "Green", brand: "Uniqlo" },
+    { id: 7, name: "Striped Crop Top", category: "Tops", price: 3200, priceText: "₹3,200", image: "/placeholder.svg", rating: 4.2, size: "M", color: "White", brand: "H&M" },
+    { id: 8, name: "Formal Shirt", category: "Tops", price: 4500, priceText: "₹4,500", image: "/placeholder.svg", rating: 4.5, size: "S", color: "Blue", brand: "COS" },
+    
+    // Bottoms
+    { id: 9, name: "High-Waist Jeans", category: "Bottoms", price: 7600, priceText: "₹7,600", image: "/placeholder.svg", rating: 4.6, size: "M", color: "Blue", brand: "Zara" },
+    { id: 10, name: "Wide Leg Trousers", category: "Bottoms", price: 5800, priceText: "₹5,800", image: "/placeholder.svg", rating: 4.3, size: "L", color: "Black", brand: "Mango" },
+    { id: 11, name: "Pleated Skirt", category: "Bottoms", price: 4200, priceText: "₹4,200", image: "/placeholder.svg", rating: 4.4, size: "S", color: "Pink", brand: "H&M" },
+    { id: 12, name: "Cargo Pants", category: "Bottoms", price: 6500, priceText: "₹6,500", image: "/placeholder.svg", rating: 4.2, size: "M", color: "Green", brand: "Uniqlo" },
+    
+    // Outerwear
+    { id: 13, name: "Classic Denim Jacket", category: "Outerwear", price: 10320, priceText: "₹10,320", image: "/placeholder.svg", rating: 4.8, size: "L", color: "Blue", brand: "H&M" },
+    { id: 14, name: "Leather Jacket", category: "Outerwear", price: 15000, priceText: "₹15,000", image: "/placeholder.svg", rating: 4.9, size: "XL", color: "Black", brand: "Zara" },
+    { id: 15, name: "Wool Coat", category: "Outerwear", price: 18500, priceText: "₹18,500", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Black", brand: "COS" },
+    { id: 16, name: "Bomber Jacket", category: "Outerwear", price: 8900, priceText: "₹8,900", image: "/placeholder.svg", rating: 4.5, size: "S", color: "Green", brand: "Mango" },
   ];
 
   const filteredItems = mockItems.filter(item => {
@@ -239,9 +254,19 @@ const Browse = () => {
                   </Button>
                 </div>
                 <CardTitle className="text-lg">{item.name}</CardTitle>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-xl font-bold text-primary">{item.priceText}</span>
                   <Badge variant="secondary">{item.category}</Badge>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>Size: {item.size}</span>
+                    <span>•</span>
+                    <span>Color: {item.color}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Brand: {item.brand}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4 pt-0">
