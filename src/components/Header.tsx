@@ -57,10 +57,15 @@ export const Header = () => {
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link 
-              to="/#try-on" 
+              to="/" 
               className={`text-foreground hover:text-primary transition-colors ${
                 location.pathname === "/" && location.hash === "#try-on" ? "text-primary" : ""
               }`}
+              onClick={() => {
+                if (location.pathname === "/") {
+                  document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
             >
               Try On
             </Link>
@@ -174,9 +179,14 @@ export const Header = () => {
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
               <Link 
-                to="/#try-on" 
+                to="/" 
                 className="text-foreground hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  if (location.pathname === "/") {
+                    document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
               >
                 Try On
               </Link>
@@ -202,12 +212,17 @@ export const Header = () => {
                 Social
               </Link>
               <div className="pt-2">
-                <Link to="/#try-on">
+                <Link to="/">
                   <Button 
                     variant="hero" 
                     size="sm" 
                     className="w-full"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      if (location.pathname === "/") {
+                        document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }}
                   >
                     Try Now
                   </Button>

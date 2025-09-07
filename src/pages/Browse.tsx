@@ -8,34 +8,54 @@ import { Search, Filter, Heart, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/useCart";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const Browse = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 20000 });
   const { toast } = useToast();
   const { addToCart } = useCart();
 
   const categories = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
+  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  const colors = ["Black", "White", "Blue", "Red", "Green", "Pink", "Yellow", "Purple"];
+  const brands = ["Zara", "H&M", "Nike", "Adidas", "Uniqlo", "Forever 21"];
   
   const mockItems = [
-    { id: 1, name: "Floral Summer Dress", category: "Dresses", price: "₹7,120", image: "/placeholder.svg", rating: 4.5 },
-    { id: 2, name: "Classic Denim Jacket", category: "Outerwear", price: "₹10,320", image: "/placeholder.svg", rating: 4.8 },
-    { id: 3, name: "Silk Blouse", category: "Tops", price: "₹6,000", image: "/placeholder.svg", rating: 4.3 },
-    { id: 4, name: "High-Waist Jeans", category: "Bottoms", price: "₹7,600", image: "/placeholder.svg", rating: 4.6 },
-    { id: 5, name: "Ankle Boots", category: "Shoes", price: "₹12,000", image: "/placeholder.svg", rating: 4.7 },
-    { id: 6, name: "Statement Necklace", category: "Accessories", price: "₹3,600", image: "/placeholder.svg", rating: 4.2 },
+    { id: 1, name: "Floral Summer Dress", category: "Dresses", price: 7120, priceText: "₹7,120", image: "/placeholder.svg", rating: 4.5, size: "M", color: "Pink", brand: "Zara" },
+    { id: 2, name: "Classic Denim Jacket", category: "Outerwear", price: 10320, priceText: "₹10,320", image: "/placeholder.svg", rating: 4.8, size: "L", color: "Blue", brand: "H&M" },
+    { id: 3, name: "Silk Blouse", category: "Tops", price: 6000, priceText: "₹6,000", image: "/placeholder.svg", rating: 4.3, size: "S", color: "White", brand: "Uniqlo" },
+    { id: 4, name: "High-Waist Jeans", category: "Bottoms", price: 7600, priceText: "₹7,600", image: "/placeholder.svg", rating: 4.6, size: "M", color: "Blue", brand: "Zara" },
+    { id: 5, name: "Ankle Boots", category: "Shoes", price: 12000, priceText: "₹12,000", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Black", brand: "Nike" },
+    { id: 6, name: "Statement Necklace", category: "Accessories", price: 3600, priceText: "₹3,600", image: "/placeholder.svg", rating: 4.2, size: "One Size", color: "Yellow", brand: "Forever 21" },
+    { id: 7, name: "Cotton T-Shirt", category: "Tops", price: 2500, priceText: "₹2,500", image: "/placeholder.svg", rating: 4.1, size: "L", color: "Green", brand: "Uniqlo" },
+    { id: 8, name: "Leather Jacket", category: "Outerwear", price: 15000, priceText: "₹15,000", image: "/placeholder.svg", rating: 4.9, size: "XL", color: "Black", brand: "Adidas" },
   ];
 
-  const filteredItems = mockItems.filter(item => 
-    (selectedCategory === "All" || item.category === selectedCategory) &&
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredItems = mockItems.filter(item => {
+    const matchesCategory = selectedCategory === "All" || item.category === selectedCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         item.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         item.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSize = selectedSizes.length === 0 || selectedSizes.includes(item.size);
+    const matchesColor = selectedColors.length === 0 || selectedColors.includes(item.color);
+    const matchesBrand = selectedBrands.length === 0 || selectedBrands.includes(item.brand);
+    const matchesPrice = item.price >= priceRange.min && item.price <= priceRange.max;
+    
+    return matchesCategory && matchesSearch && matchesSize && matchesColor && matchesBrand && matchesPrice;
+  });
 
   const handleAddToCart = (item: typeof mockItems[0]) => {
     addToCart({
       id: item.id.toString(),
       name: item.name,
-      price: item.price,
+      price: item.priceText,
       image: item.image,
       category: item.category
     });
@@ -68,17 +88,103 @@ const Browse = () => {
                 className="pl-10"
               />
             </div>
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => toast({
-                title: "Filter Options",
-                description: "Size, color, brand, and price filters coming soon!"
-              })}
-            >
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Filter className="w-4 h-4" />
+                  Filter
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Filter Options</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-6">
+                  {/* Size Filter */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Size</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {sizes.map((size) => (
+                        <div key={size} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`size-${size}`}
+                            checked={selectedSizes.includes(size)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedSizes([...selectedSizes, size]);
+                              } else {
+                                setSelectedSizes(selectedSizes.filter(s => s !== size));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`size-${size}`} className="text-sm">{size}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Color Filter */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Color</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {colors.map((color) => (
+                        <div key={color} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`color-${color}`}
+                            checked={selectedColors.includes(color)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedColors([...selectedColors, color]);
+                              } else {
+                                setSelectedColors(selectedColors.filter(c => c !== color));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`color-${color}`} className="text-sm">{color}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Brand Filter */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Brand</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {brands.map((brand) => (
+                        <div key={brand} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`brand-${brand}`}
+                            checked={selectedBrands.includes(brand)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedBrands([...selectedBrands, brand]);
+                              } else {
+                                setSelectedBrands(selectedBrands.filter(b => b !== brand));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`brand-${brand}`} className="text-sm">{brand}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Clear Filters */}
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                      setSelectedSizes([]);
+                      setSelectedColors([]);
+                      setSelectedBrands([]);
+                      setPriceRange({ min: 0, max: 20000 });
+                    }}
+                  >
+                    Clear All Filters
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Category Tabs */}
@@ -118,7 +224,7 @@ const Browse = () => {
                 </div>
                 <CardTitle className="text-lg">{item.name}</CardTitle>
                 <div className="flex items-center justify-between">
-                  <span className="text-xl font-bold text-primary">{item.price}</span>
+                  <span className="text-xl font-bold text-primary">{item.priceText}</span>
                   <Badge variant="secondary">{item.category}</Badge>
                 </div>
               </CardHeader>
@@ -140,7 +246,10 @@ const Browse = () => {
                     size="sm"
                     onClick={() => {
                       // Navigate to virtual try-on with this item
-                      window.location.href = '/#try-on';
+                      window.location.href = '/';
+                      setTimeout(() => {
+                        document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
+                      }, 100);
                       toast({
                         title: "Try On Feature",
                         description: `Ready to try on ${item.name}! Upload your photo to get started.`
