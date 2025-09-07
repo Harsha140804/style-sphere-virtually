@@ -8,9 +8,11 @@ import { Search, Filter, Heart, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { TryOnDialog } from "@/components/TryOnDialog";
 
 const Browse = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,8 +21,11 @@ const Browse = () => {
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 20000 });
+  const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
+  const [selectedTryOnItem, setSelectedTryOnItem] = useState<typeof mockItems[0] | null>(null);
   const { toast } = useToast();
   const { addToCart } = useCart();
+  const { addToWishlist, isInWishlist } = useWishlist();
 
   const categories = ["All", "Tops", "Bottoms", "Dresses", "Outerwear", "Shoes", "Accessories"];
   const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -61,11 +66,20 @@ const Browse = () => {
     });
   };
 
-  const handleAddToWishlist = (itemName: string) => {
-    toast({
-      title: "Added to Wishlist",
-      description: `${itemName} has been saved to your wishlist!`
+  const handleAddToWishlist = (item: typeof mockItems[0]) => {
+    addToWishlist({
+      id: item.id.toString(),
+      name: item.name,
+      price: item.priceText,
+      image: item.image,
+      category: item.category,
+      brand: item.brand
     });
+  };
+
+  const handleTryOn = (item: typeof mockItems[0]) => {
+    setSelectedTryOnItem(item);
+    setTryOnDialogOpen(true);
   };
 
   return (
@@ -216,10 +230,12 @@ const Browse = () => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/80 hover:bg-background"
-                    onClick={() => handleAddToWishlist(item.name)}
+                    className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-background/80 hover:bg-background ${
+                      isInWishlist(item.id.toString()) ? 'text-red-500' : ''
+                    }`}
+                    onClick={() => handleAddToWishlist(item)}
                   >
-                    <Heart className="w-4 h-4" />
+                    <Heart className={`w-4 h-4 ${isInWishlist(item.id.toString()) ? 'fill-current' : ''}`} />
                   </Button>
                 </div>
                 <CardTitle className="text-lg">{item.name}</CardTitle>
@@ -244,17 +260,7 @@ const Browse = () => {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => {
-                      // Navigate to virtual try-on with this item
-                      window.location.href = '/';
-                      setTimeout(() => {
-                        document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
-                      }, 100);
-                      toast({
-                        title: "Try On Feature",
-                        description: `Ready to try on ${item.name}! Upload your photo to get started.`
-                      });
-                    }}
+                    onClick={() => handleTryOn(item)}
                   >
                     Try On
                   </Button>
@@ -268,6 +274,19 @@ const Browse = () => {
           <div className="text-center py-12">
             <p className="text-muted-foreground">No items found matching your criteria.</p>
           </div>
+        )}
+
+        {/* Try-On Dialog */}
+        {selectedTryOnItem && (
+          <TryOnDialog
+            isOpen={tryOnDialogOpen}
+            onClose={() => {
+              setTryOnDialogOpen(false);
+              setSelectedTryOnItem(null);
+            }}
+            itemName={selectedTryOnItem.name}
+            itemImage={selectedTryOnItem.image}
+          />
         )}
       </main>
       <Footer />
