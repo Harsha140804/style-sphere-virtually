@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, Plus, BarChart3, Shirt, Package, Camera, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useWardrobe } from "@/hooks/useWardrobe";
 import { AddItemDialog } from "@/components/AddItemDialog";
@@ -25,7 +25,7 @@ const Wardrobe = () => {
   const [showTryOnDialog, setShowTryOnDialog] = useState(false);
   const [selectedOutfitForTryOn, setSelectedOutfitForTryOn] = useState(null);
 
-  const stats = getStats();
+  const stats = useMemo(() => getStats(), [getStats]);
 
   const handleEditOutfit = (outfit) => {
     setEditingOutfit(outfit);

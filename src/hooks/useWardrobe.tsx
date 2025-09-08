@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 export interface WardrobeItem {
@@ -121,7 +121,7 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   ]);
 
-  const addItem = (item: Omit<WardrobeItem, 'id' | 'worn' | 'dateAdded'>) => {
+  const addItem = useCallback((item: Omit<WardrobeItem, 'id' | 'worn' | 'dateAdded'>) => {
     const newItem: WardrobeItem = {
       ...item,
       id: Date.now().toString(),
@@ -134,9 +134,9 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
       title: "Item Added",
       description: `${item.name} has been added to your wardrobe!`
     });
-  };
+  }, [toast]);
 
-  const removeItem = (id: string) => {
+  const removeItem = useCallback((id: string) => {
     const item = wardrobeItems.find(i => i.id === id);
     setWardrobeItems(prev => prev.filter(i => i.id !== id));
     // Also remove from outfits
@@ -151,15 +151,15 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
         description: `${item.name} has been removed from your wardrobe.`
       });
     }
-  };
+  }, [wardrobeItems, toast]);
 
-  const updateItem = (id: string, updates: Partial<WardrobeItem>) => {
+  const updateItem = useCallback((id: string, updates: Partial<WardrobeItem>) => {
     setWardrobeItems(prev => prev.map(item => 
       item.id === id ? { ...item, ...updates } : item
     ));
-  };
+  }, []);
 
-  const addOutfit = (outfit: Omit<Outfit, 'id' | 'lastWorn'>) => {
+  const addOutfit = useCallback((outfit: Omit<Outfit, 'id' | 'lastWorn'>) => {
     const newOutfit: Outfit = {
       ...outfit,
       id: Date.now().toString(),
@@ -171,15 +171,15 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
       title: "Outfit Created",
       description: `${outfit.name} has been saved to your outfits!`
     });
-  };
+  }, [toast]);
 
-  const updateOutfit = (id: string, updates: Partial<Outfit>) => {
+  const updateOutfit = useCallback((id: string, updates: Partial<Outfit>) => {
     setOutfits(prev => prev.map(outfit => 
       outfit.id === id ? { ...outfit, ...updates } : outfit
     ));
-  };
+  }, []);
 
-  const removeOutfit = (id: string) => {
+  const removeOutfit = useCallback((id: string) => {
     const outfit = outfits.find(o => o.id === id);
     setOutfits(prev => prev.filter(o => o.id !== id));
     
@@ -189,9 +189,9 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
         description: `${outfit.name} has been removed.`
       });
     }
-  };
+  }, [outfits, toast]);
 
-  const wearOutfit = (id: string) => {
+  const wearOutfit = useCallback((id: string) => {
     const outfit = outfits.find(o => o.id === id);
     if (outfit) {
       // Update last worn date
@@ -205,13 +205,13 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
         }
       });
     }
-  };
+  }, [outfits, wardrobeItems, updateOutfit, updateItem]);
 
-  const getClothingItems = () => {
+  const getClothingItems = useCallback(() => {
     return wardrobeItems;
-  };
+  }, [wardrobeItems]);
 
-  const getStats = () => {
+  const getStats = useCallback(() => {
     const totalItems = wardrobeItems.length;
     
     // Calculate composition by occasion
@@ -226,34 +226,48 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
     }, {} as Record<string, number>);
     
     const underutilized = wardrobeItems.filter(item => item.worn < 5).length;
-    const mostWorn = wardrobeItems.reduce((prev, current) => 
+    const mostWorn = totalItems > 0 ? wardrobeItems.reduce((prev, current) => 
       (prev && prev.worn > current.worn) ? prev : current
-    );
+    ) : null;
     const leastWorn = wardrobeItems.filter(item => item.worn < 3);
     
     return {
       totalItems,
       composition,
       underutilized,
-      mostWorn: totalItems > 0 ? mostWorn : null,
+      mostWorn,
       leastWorn
     };
-  };
+  }, [wardrobeItems]);
+
+  const contextValue = useMemo(() => ({
+    wardrobeItems,
+    outfits,
+    addItem,
+    removeItem,
+    updateItem,
+    addOutfit,
+    updateOutfit,
+    removeOutfit,
+    wearOutfit,
+    getClothingItems,
+    getStats
+  }), [
+    wardrobeItems,
+    outfits,
+    addItem,
+    removeItem,
+    updateItem,
+    addOutfit,
+    updateOutfit,
+    removeOutfit,
+    wearOutfit,
+    getClothingItems,
+    getStats
+  ]);
 
   return (
-    <WardrobeContext.Provider value={{
-      wardrobeItems,
-      outfits,
-      addItem,
-      removeItem,
-      updateItem,
-      addOutfit,
-      updateOutfit,
-      removeOutfit,
-      wearOutfit,
-      getClothingItems,
-      getStats
-    }}>
+    <WardrobeContext.Provider value={contextValue}>
       {children}
     </WardrobeContext.Provider>
   );
