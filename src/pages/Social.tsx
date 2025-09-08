@@ -6,13 +6,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Share2, Plus, Camera, Lock, Globe, Users } from "lucide-react";
+import { Heart, MessageCircle, Share2, Plus, Camera, Lock, Globe, Users, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const Social = () => {
   const { toast } = useToast();
   const [newPostText, setNewPostText] = useState("");
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set([2]));
+  const [selectedTryOnResult, setSelectedTryOnResult] = useState<string | null>(null);
 
   const mockPosts = [
     {
@@ -53,10 +55,46 @@ const Social = () => {
     { id: 3, name: "Date Night", items: 5, visibility: "friends", image: "/placeholder.svg" },
   ];
 
+  const myTryOnResults = [
+    { id: 1, name: "Black Dress Virtual Try-On", image: "/placeholder.svg", date: "Today" },
+    { id: 2, name: "Blue Jeans + Striped Sweater", image: "/placeholder.svg", date: "Yesterday" },
+    { id: 3, name: "Denim Jacket Outfit", image: "/placeholder.svg", date: "2 days ago" },
+  ];
+
+  const [myStylePosts, setMyStylePosts] = useState([
+    { 
+      id: 1, 
+      image: "/placeholder.svg", 
+      caption: "My latest outfit creation! Loving this color combination 💙", 
+      likes: 15, 
+      timestamp: "1h ago" 
+    },
+    { 
+      id: 2, 
+      image: "/placeholder.svg", 
+      caption: "Weekend casual vibes - comfort meets style ✨", 
+      likes: 8, 
+      timestamp: "3h ago" 
+    }
+  ]);
+
   const handleLike = (postId: number) => {
-    toast({
-      title: "Post Liked",
-      description: "You liked this outfit post!"
+    setLikedPosts(prev => {
+      const newLikedPosts = new Set(prev);
+      if (newLikedPosts.has(postId)) {
+        newLikedPosts.delete(postId);
+        toast({
+          title: "Post Unliked",
+          description: "You unliked this outfit post!"
+        });
+      } else {
+        newLikedPosts.add(postId);
+        toast({
+          title: "Post Liked",
+          description: "You liked this outfit post!"
+        });
+      }
+      return newLikedPosts;
     });
   };
 
@@ -68,13 +106,30 @@ const Social = () => {
   };
 
   const handleCreatePost = () => {
-    if (newPostText.trim()) {
+    if (newPostText.trim() || selectedTryOnResult) {
+      const newPost = {
+        id: Date.now(),
+        image: selectedTryOnResult || "/placeholder.svg",
+        caption: newPostText.trim() || "Check out my latest style!",
+        likes: 0,
+        timestamp: "now"
+      };
+      setMyStylePosts(prev => [newPost, ...prev]);
       toast({
         title: "Post Created",
         description: "Your outfit post has been shared!"
       });
       setNewPostText("");
+      setSelectedTryOnResult(null);
     }
+  };
+
+  const handleSelectTryOnResult = (result: any) => {
+    setSelectedTryOnResult(result.image);
+    toast({
+      title: "Try-On Result Selected",
+      description: `${result.name} added to your post!`
+    });
   };
 
   const handleCreateLookbook = () => {
@@ -142,10 +197,18 @@ const Social = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => toast({
-                        title: "Try-On Results",
-                        description: "Select from your recent virtual try-on sessions"
-                      })}
+                      onClick={() => {
+                        if (myTryOnResults.length > 0) {
+                          // Create a simple selection dialog
+                          const selectedIndex = Math.floor(Math.random() * myTryOnResults.length);
+                          handleSelectTryOnResult(myTryOnResults[selectedIndex]);
+                        } else {
+                          toast({
+                            title: "No Try-On Results",
+                            description: "Create some virtual try-on results first!"
+                          });
+                        }
+                      }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Try-On Result
@@ -153,6 +216,14 @@ const Social = () => {
                   </div>
                   <Button onClick={handleCreatePost}>Post</Button>
                 </div>
+                {selectedTryOnResult && (
+                  <div className="p-3 bg-accent/50 rounded-lg">
+                    <p className="text-sm font-medium mb-2">Selected Try-On Result:</p>
+                    <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
+                      <img src={selectedTryOnResult} alt="Selected try-on" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -181,24 +252,15 @@ const Social = () => {
                       />
                     </div>
                     <p className="text-sm">{post.caption}</p>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className={post.isLiked ? "text-destructive" : ""}
-                          onClick={() => handleLike(post.id)}
-                        >
-                          <Heart className={`w-4 h-4 mr-2 ${post.isLiked ? "fill-current" : ""}`} />
-                          {post.likes}
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          {post.comments}
-                        </Button>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => handleShare(post.id)}>
-                        <Share2 className="w-4 h-4" />
+                    <div className="flex items-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className={likedPosts.has(post.id) ? "text-destructive" : ""}
+                        onClick={() => handleLike(post.id)}
+                      >
+                        <Heart className={`w-4 h-4 mr-2 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
+                        {post.likes + (likedPosts.has(post.id) && !post.isLiked ? 1 : 0) - (!likedPosts.has(post.id) && post.isLiked ? 1 : 0)}
                       </Button>
                     </div>
                   </CardContent>
@@ -210,17 +272,14 @@ const Social = () => {
           <TabsContent value="my-posts" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">My Style Posts</h2>
-              <Button onClick={() => toast({
-                title: "Create New Post",
-                description: "Share your latest outfit or style inspiration!"
-              })}>
+              <Button onClick={handleCreatePost}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Post
               </Button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockPosts.slice(0, 2).map((post) => (
+              {myStylePosts.map((post) => (
                 <Card key={post.id} className="hover:shadow-elegant transition-shadow duration-300">
                   <CardContent className="p-4">
                     <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
@@ -232,8 +291,33 @@ const Social = () => {
                     </div>
                     <p className="text-sm mb-2 line-clamp-2">{post.caption}</p>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{post.likes} likes • {post.comments} comments</span>
+                      <span>{post.likes} likes</span>
                       <span>{post.timestamp}</span>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => toast({
+                          title: "Edit Post",
+                          description: "Edit your style post"
+                        })}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setMyStylePosts(prev => prev.filter(p => p.id !== post.id));
+                          toast({
+                            title: "Post Deleted",
+                            description: "Your post has been removed"
+                          });
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -246,7 +330,7 @@ const Social = () => {
               <h2 className="text-xl font-semibold">My Lookbooks</h2>
               <Button onClick={() => toast({
                 title: "Create Lookbook",
-                description: "Organize your favorite outfits into a themed collection!"
+                description: "Organize your favorite clothing items into a themed collection!"
               })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Lookbook
@@ -266,7 +350,7 @@ const Social = () => {
                     </div>
                     <h3 className="font-semibold mb-2">{lookbook.name}</h3>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-muted-foreground">{lookbook.items} items</span>
+                      <span className="text-sm text-muted-foreground">{lookbook.items} clothing items</span>
                       <Badge variant="outline" className="flex items-center gap-1 text-xs">
                         {lookbook.visibility === "public" && <Globe className="w-3 h-3" />}
                         {lookbook.visibility === "private" && <Lock className="w-3 h-3" />}
@@ -274,29 +358,18 @@ const Social = () => {
                         {lookbook.visibility}
                       </Badge>
                     </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => toast({
-                          title: "Edit Lookbook",
-                          description: `Editing ${lookbook.name} - add or remove items`
-                        })}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => toast({
-                          title: "Share Lookbook",
-                          description: `Sharing ${lookbook.name} with friends!`
-                        })}
-                      >
-                        Share
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => toast({
+                        title: "Edit Lookbook",
+                        description: `Editing ${lookbook.name} - add or remove clothing items from your collection`
+                      })}
+                    >
+                      <Edit className="w-3 h-3 mr-2" />
+                      Edit Items
+                    </Button>
                   </CardContent>
                 </Card>
               ))}

@@ -182,22 +182,13 @@ const Wardrobe = () => {
                         Last worn: {outfit.lastWorn}
                       </div>
                       <Badge variant="outline" className="mb-4">{outfit.occasion}</Badge>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          className="flex-1"
-                          onClick={() => handleWearToday(outfit)}
-                        >
-                          Wear Today
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditOutfit(outfit)}
-                        >
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                      </div>
+                      <Button 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleWearToday(outfit)}
+                      >
+                        Wear Today
+                      </Button>
                     </CardContent>
                   </Card>
                 ))
