@@ -137,21 +137,22 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [toast]);
 
   const removeItem = useCallback((id: string) => {
-    const item = wardrobeItems.find(i => i.id === id);
-    setWardrobeItems(prev => prev.filter(i => i.id !== id));
+    setWardrobeItems(prev => {
+      const item = prev.find(i => i.id === id);
+      if (item) {
+        toast({
+          title: "Item Removed",
+          description: `${item.name} has been removed from your wardrobe.`
+        });
+      }
+      return prev.filter(i => i.id !== id);
+    });
     // Also remove from outfits
     setOutfits(prev => prev.map(outfit => ({
       ...outfit,
       items: outfit.items.filter(itemId => itemId !== id)
     })));
-    
-    if (item) {
-      toast({
-        title: "Item Removed",
-        description: `${item.name} has been removed from your wardrobe.`
-      });
-    }
-  }, [wardrobeItems, toast]);
+  }, [toast]);
 
   const updateItem = useCallback((id: string, updates: Partial<WardrobeItem>) => {
     setWardrobeItems(prev => prev.map(item => 
@@ -180,32 +181,41 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, []);
 
   const removeOutfit = useCallback((id: string) => {
-    const outfit = outfits.find(o => o.id === id);
-    setOutfits(prev => prev.filter(o => o.id !== id));
-    
-    if (outfit) {
-      toast({
-        title: "Outfit Removed",
-        description: `${outfit.name} has been removed.`
-      });
-    }
-  }, [outfits, toast]);
+    setOutfits(prev => {
+      const outfit = prev.find(o => o.id === id);
+      if (outfit) {
+        toast({
+          title: "Outfit Removed",
+          description: `${outfit.name} has been removed.`
+        });
+      }
+      return prev.filter(o => o.id !== id);
+    });
+  }, [toast]);
 
   const wearOutfit = useCallback((id: string) => {
-    const outfit = outfits.find(o => o.id === id);
-    if (outfit) {
-      // Update last worn date
-      updateOutfit(id, { lastWorn: new Date().toISOString().split('T')[0] });
-      
-      // Increment worn count for all items in the outfit
-      outfit.items.forEach(itemId => {
-        const item = wardrobeItems.find(i => i.id === itemId);
-        if (item) {
-          updateItem(itemId, { worn: item.worn + 1 });
-        }
-      });
-    }
-  }, [outfits, wardrobeItems, updateOutfit, updateItem]);
+    // Update last worn date
+    setOutfits(prev => prev.map(outfit => 
+      outfit.id === id 
+        ? { ...outfit, lastWorn: new Date().toISOString().split('T')[0] }
+        : outfit
+    ));
+    
+    // Increment worn count for all items in the outfit
+    setOutfits(prev => {
+      const outfit = prev.find(o => o.id === id);
+      if (outfit) {
+        setWardrobeItems(wardrobePrev => 
+          wardrobePrev.map(item => 
+            outfit.items.includes(item.id) 
+              ? { ...item, worn: item.worn + 1 }
+              : item
+          )
+        );
+      }
+      return prev;
+    });
+  }, []);
 
   const getClothingItems = useCallback(() => {
     return wardrobeItems;
