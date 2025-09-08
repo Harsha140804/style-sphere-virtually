@@ -44,12 +44,14 @@ const Wardrobe = () => {
   };
 
   const getOutfitItems = (outfit) => {
+    if (!outfit || !outfit.items) return [];
     return outfit.items.map(itemId => 
       wardrobeItems.find(item => item.id === itemId)
     ).filter(Boolean);
   };
 
   const getOutfitImage = (outfit) => {
+    if (!outfit) return "/placeholder.svg";
     const items = getOutfitItems(outfit);
     return items[0]?.image || "/placeholder.svg";
   };
