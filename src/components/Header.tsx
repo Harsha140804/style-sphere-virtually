@@ -2,9 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Search, User, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { Badge } from "@/components/ui/badge";
+import { CartSidebar } from "@/components/CartSidebar";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,6 +14,7 @@ export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,11 +35,12 @@ export const Header = () => {
     });
   };
 
-  const handleCartClick = () => {
-    toast({
-      title: "Shopping Cart",
-      description: totalItems > 0 ? `You have ${totalItems} items in your cart` : "Your cart is empty. Start shopping to add items!"
-    });
+  const handleTryNowClick = () => {
+    if (location.pathname === "/") {
+      document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate("/#try-on");
+    }
   };
 
   return (
@@ -121,17 +124,19 @@ export const Header = () => {
             >
               <Search className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleCartClick} className="relative">
-              <ShoppingBag className="w-4 h-4" />
-              {totalItems > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
-                >
-                  {totalItems}
-                </Badge>
-              )}
-            </Button>
+            <CartSidebar>
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingBag className="w-4 h-4" />
+                {totalItems > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
+                  >
+                    {totalItems}
+                  </Badge>
+                )}
+              </Button>
+            </CartSidebar>
             <Link to="/profile">
               <Button variant="ghost" size="icon">
                 <User className="w-4 h-4" />
@@ -149,7 +154,7 @@ export const Header = () => {
               variant="hero" 
               size="sm" 
               className="hidden sm:flex"
-              onClick={() => document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={handleTryNowClick}
             >
               Try Now
             </Button>
@@ -212,21 +217,17 @@ export const Header = () => {
                 Social
               </Link>
               <div className="pt-2">
-                <Link to="/">
-                  <Button 
-                    variant="hero" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      if (location.pathname === "/") {
-                        document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }}
-                  >
-                    Try Now
-                  </Button>
-                </Link>
+                <Button 
+                  variant="hero" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleTryNowClick();
+                  }}
+                >
+                  Try Now
+                </Button>
               </div>
             </nav>
           </div>

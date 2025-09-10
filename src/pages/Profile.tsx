@@ -9,12 +9,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { User, Camera, Bell, Globe, Lock, Download, Trash2, Ruler } from "lucide-react";
+import { User, Camera, Bell, Globe, Lock, Trash2, Ruler, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { ColorPicker } from "@/components/ColorPicker";
+import { BrandSelector } from "@/components/BrandSelector";
 
 const Profile = () => {
   const { toast } = useToast();
+  const [profileImage, setProfileImage] = useState<string>("/placeholder.svg");
   const [profileData, setProfileData] = useState({
     name: "Sarah Johnson",
     email: "sarah.johnson@example.com",
@@ -55,10 +58,55 @@ const Profile = () => {
     });
   };
 
-  const handleExportData = () => {
-    toast({
-      title: "Export Started",
-      description: "Your wardrobe data export will be ready shortly."
+  const handleAddColor = (color: string) => {
+    if (!profileData.preferences.colors.includes(color)) {
+      setProfileData({
+        ...profileData,
+        preferences: {
+          ...profileData.preferences,
+          colors: [...profileData.preferences.colors, color]
+        }
+      });
+      toast({
+        title: "Color Added",
+        description: `${color} has been added to your favorites`
+      });
+    }
+  };
+
+  const handleRemoveColor = (colorToRemove: string) => {
+    setProfileData({
+      ...profileData,
+      preferences: {
+        ...profileData.preferences,
+        colors: profileData.preferences.colors.filter(color => color !== colorToRemove)
+      }
+    });
+  };
+
+  const handleAddBrand = (brand: string) => {
+    if (!profileData.preferences.brands.includes(brand)) {
+      setProfileData({
+        ...profileData,
+        preferences: {
+          ...profileData.preferences,
+          brands: [...profileData.preferences.brands, brand]
+        }
+      });
+      toast({
+        title: "Brand Added",
+        description: `${brand} has been added to your preferences`
+      });
+    }
+  };
+
+  const handleRemoveBrand = (brandToRemove: string) => {
+    setProfileData({
+      ...profileData,
+      preferences: {
+        ...profileData.preferences,
+        brands: profileData.preferences.brands.filter(brand => brand !== brandToRemove)
+      }
     });
   };
 
@@ -97,7 +145,7 @@ const Profile = () => {
               <CardContent className="space-y-6">
                 <div className="flex items-center gap-6">
                   <Avatar className="w-24 h-24">
-                    <AvatarImage src="/placeholder.svg" />
+                    <AvatarImage src={profileImage} />
                     <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="space-y-2">
@@ -111,6 +159,11 @@ const Profile = () => {
                         input.onchange = (e) => {
                           const file = (e.target as HTMLInputElement).files?.[0];
                           if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                              setProfileImage(e.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
                             toast({
                               title: "Profile Photo Updated",
                               description: `New profile photo uploaded successfully!`
@@ -283,20 +336,21 @@ const Profile = () => {
                   <Label>Favorite Colors</Label>
                   <div className="flex flex-wrap gap-2">
                     {profileData.preferences.colors.map((color, index) => (
-                      <span key={index} className="px-3 py-1 bg-accent rounded-full text-sm">
+                      <span key={index} className="px-3 py-1 bg-accent rounded-full text-sm flex items-center gap-2">
                         {color}
+                        <button 
+                          onClick={() => handleRemoveColor(color)}
+                          className="hover:text-destructive"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </span>
                     ))}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => toast({
-                        title: "Add Color",
-                        description: "Color picker opened - select your favorite colors"
-                      })}
-                    >
-                      + Add Color
-                    </Button>
+                    <ColorPicker onColorSelect={handleAddColor}>
+                      <Button variant="outline" size="sm">
+                        + Add Color
+                      </Button>
+                    </ColorPicker>
                   </div>
                 </div>
 
@@ -304,20 +358,21 @@ const Profile = () => {
                   <Label>Preferred Brands</Label>
                   <div className="flex flex-wrap gap-2">
                     {profileData.preferences.brands.map((brand, index) => (
-                      <span key={index} className="px-3 py-1 bg-accent rounded-full text-sm">
+                      <span key={index} className="px-3 py-1 bg-accent rounded-full text-sm flex items-center gap-2">
                         {brand}
+                        <button 
+                          onClick={() => handleRemoveBrand(brand)}
+                          className="hover:text-destructive"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </span>
                     ))}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => toast({
-                        title: "Add Brand",
-                        description: "Brand selector opened - choose your preferred brands"
-                      })}
-                    >
-                      + Add Brand
-                    </Button>
+                    <BrandSelector onBrandSelect={handleAddBrand}>
+                      <Button variant="outline" size="sm">
+                        + Add Brand
+                      </Button>
+                    </BrandSelector>
                   </div>
                 </div>
 
@@ -396,18 +451,12 @@ const Profile = () => {
                 <CardTitle>Data Management</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button variant="outline" onClick={handleExportData} className="flex-1">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export My Data
-                  </Button>
-                  <Button variant="destructive" onClick={handleDeleteAccount} className="flex-1">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Account
-                  </Button>
-                </div>
+                <Button variant="destructive" onClick={handleDeleteAccount} className="w-full">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Account
+                </Button>
                 <p className="text-xs text-muted-foreground">
-                  Export includes your wardrobe items, outfits, and preferences. Account deletion is permanent.
+                  Account deletion is permanent and cannot be undone.
                 </p>
               </CardContent>
             </Card>
