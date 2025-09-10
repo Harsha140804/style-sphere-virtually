@@ -100,10 +100,8 @@ export const EditOutfitDialog: React.FC<EditOutfitDialogProps> = ({ isOpen, onCl
     onClose();
   };
 
-  if (!outfit) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen && !!outfit} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
