@@ -194,28 +194,34 @@ export const WardrobeProvider: React.FC<{ children: ReactNode }> = ({ children }
   }, [toast]);
 
   const wearOutfit = useCallback((id: string) => {
-    // First, find the outfit to get its items
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Update outfit last worn date
     setOutfits(prev => {
       const outfit = prev.find(o => o.id === id);
       if (!outfit) return prev;
       
-      // Update wardrobe items worn count (separate state update)
-      setWardrobeItems(wardrobePrev => 
-        wardrobePrev.map(item => 
-          outfit.items.includes(item.id) 
-            ? { ...item, worn: item.worn + 1 }
-            : item
-        )
-      );
-      
-      // Update outfit last worn date
       return prev.map(o => 
         o.id === id 
-          ? { ...o, lastWorn: new Date().toISOString().split('T')[0] }
+          ? { ...o, lastWorn: today }
           : o
       );
     });
-  }, []);
+    
+    // Update wardrobe items worn count separately
+    setWardrobeItems(prev => {
+      // Find the outfit from current state
+      const currentOutfits = outfits;
+      const outfit = currentOutfits.find(o => o.id === id);
+      if (!outfit) return prev;
+      
+      return prev.map(item => 
+        outfit.items.includes(item.id) 
+          ? { ...item, worn: item.worn + 1 }
+          : item
+      );
+    });
+  }, [outfits]);
 
   const getClothingItems = useCallback(() => {
     return wardrobeItems;
