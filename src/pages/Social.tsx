@@ -9,12 +9,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Heart, MessageCircle, Share2, Plus, Camera, Lock, Globe, Users, Edit, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { TryOnResultSelector } from "@/components/TryOnResultSelector";
+import { EditPostDialog } from "@/components/EditPostDialog";
+import { CreateLookbookDialog } from "@/components/CreateLookbookDialog";
+import { EditLookbookDialog } from "@/components/EditLookbookDialog";
 
 const Social = () => {
   const { toast } = useToast();
   const [newPostText, setNewPostText] = useState("");
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set([2]));
   const [selectedTryOnResult, setSelectedTryOnResult] = useState<string | null>(null);
+  const [showTryOnSelector, setShowTryOnSelector] = useState(false);
+  const [showEditPost, setShowEditPost] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [showCreateLookbook, setShowCreateLookbook] = useState(false);
+  const [showEditLookbook, setShowEditLookbook] = useState(false);
+  const [editingLookbook, setEditingLookbook] = useState<any>(null);
+  const [feedPosts, setFeedPosts] = useState<any[]>([]);
 
   const mockPosts = [
     {
@@ -49,11 +60,11 @@ const Social = () => {
     }
   ];
 
-  const myLookbooks = [
-    { id: 1, name: "Summer Essentials", items: 12, visibility: "public", image: "/placeholder.svg" },
-    { id: 2, name: "Work Outfits", items: 8, visibility: "private", image: "/placeholder.svg" },
-    { id: 3, name: "Date Night", items: 5, visibility: "friends", image: "/placeholder.svg" },
-  ];
+  const [myLookbooks, setMyLookbooks] = useState([
+    { id: 1, name: "Summer Essentials", items: 12, visibility: "public", image: "/placeholder.svg", selectedItemIds: [] },
+    { id: 2, name: "Work Outfits", items: 8, visibility: "private", image: "/placeholder.svg", selectedItemIds: [] },
+    { id: 3, name: "Date Night", items: 5, visibility: "friends", image: "/placeholder.svg", selectedItemIds: [] },
+  ]);
 
   const myTryOnResults = [
     { id: 1, name: "Black Dress Virtual Try-On", image: "/placeholder.svg", date: "Today" },
@@ -109,12 +120,25 @@ const Social = () => {
     if (newPostText.trim() || selectedTryOnResult) {
       const newPost = {
         id: Date.now(),
+        user: { name: "You", avatar: "/placeholder.svg", username: "@you" },
         image: selectedTryOnResult || "/placeholder.svg",
         caption: newPostText.trim() || "Check out my latest style!",
         likes: 0,
+        comments: 0,
+        isLiked: false,
         timestamp: "now"
       };
-      setMyStylePosts(prev => [newPost, ...prev]);
+      
+      // Add to both feed and my posts
+      setFeedPosts(prev => [newPost, ...prev]);
+      setMyStylePosts(prev => [{
+        id: newPost.id,
+        image: newPost.image,
+        caption: newPost.caption,
+        likes: newPost.likes,
+        timestamp: newPost.timestamp
+      }, ...prev]);
+      
       toast({
         title: "Post Created",
         description: "Your outfit post has been shared!"
@@ -132,10 +156,43 @@ const Social = () => {
     });
   };
 
-  const handleCreateLookbook = () => {
+  const handleEditPost = (post: any) => {
+    setEditingPost(post);
+    setShowEditPost(true);
+  };
+
+  const handleSavePost = (postId: number, newCaption: string) => {
+    setMyStylePosts(prev => prev.map(post => 
+      post.id === postId ? { ...post, caption: newCaption } : post
+    ));
     toast({
-      title: "Create Lookbook",
-      description: "Lookbook creator opened"
+      title: "Post Updated",
+      description: "Your post caption has been updated!"
+    });
+  };
+
+  const handleCreateLookbook = (lookbook: any) => {
+    setMyLookbooks(prev => [...prev, lookbook]);
+  };
+
+  const handleEditLookbook = (lookbook: any) => {
+    setEditingLookbook(lookbook);
+    setShowEditLookbook(true);
+  };
+
+  const handleSaveLookbook = (lookbookId: number, selectedItems: string[], itemCount: number) => {
+    setMyLookbooks(prev => prev.map(lookbook => 
+      lookbook.id === lookbookId 
+        ? { ...lookbook, selectedItemIds: selectedItems, items: itemCount }
+        : lookbook
+    ));
+  };
+
+  const handleDeleteLookbook = (lookbookId: number) => {
+    setMyLookbooks(prev => prev.filter(lookbook => lookbook.id !== lookbookId));
+    toast({
+      title: "Lookbook Deleted",
+      description: "Your lookbook has been removed"
     });
   };
 
@@ -197,18 +254,7 @@ const Social = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => {
-                        if (myTryOnResults.length > 0) {
-                          // Create a simple selection dialog
-                          const selectedIndex = Math.floor(Math.random() * myTryOnResults.length);
-                          handleSelectTryOnResult(myTryOnResults[selectedIndex]);
-                        } else {
-                          toast({
-                            title: "No Try-On Results",
-                            description: "Create some virtual try-on results first!"
-                          });
-                        }
-                      }}
+                      onClick={() => setShowTryOnSelector(true)}
                     >
                       <Plus className="w-4 h-4 mr-2" />
                       Try-On Result
@@ -229,7 +275,7 @@ const Social = () => {
 
             {/* Posts Feed */}
             <div className="space-y-6">
-              {mockPosts.map((post) => (
+              {[...feedPosts, ...mockPosts].map((post) => (
                 <Card key={post.id}>
                   <CardHeader>
                     <div className="flex items-center gap-3">
@@ -272,10 +318,6 @@ const Social = () => {
           <TabsContent value="my-posts" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">My Style Posts</h2>
-              <Button onClick={handleCreatePost}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Post
-              </Button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -298,10 +340,7 @@ const Social = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        onClick={() => toast({
-                          title: "Edit Post",
-                          description: "Edit your style post"
-                        })}
+                        onClick={() => handleEditPost(post)}
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
@@ -328,10 +367,7 @@ const Social = () => {
           <TabsContent value="lookbooks" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">My Lookbooks</h2>
-              <Button onClick={() => toast({
-                title: "Create Lookbook",
-                description: "Organize your favorite clothing items into a themed collection!"
-              })}>
+              <Button onClick={() => setShowCreateLookbook(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Lookbook
               </Button>
@@ -358,18 +394,28 @@ const Social = () => {
                         {lookbook.visibility}
                       </Badge>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => toast({
-                        title: "Edit Lookbook",
-                        description: `Editing ${lookbook.name} - add or remove clothing items from your collection`
-                      })}
-                    >
-                      <Edit className="w-3 h-3 mr-2" />
-                      Edit Items
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleEditLookbook(lookbook)}
+                      >
+                        <Edit className="w-3 h-3 mr-2" />
+                        Edit Items
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`Delete ${lookbook.name}?`)) {
+                            handleDeleteLookbook(lookbook.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -378,6 +424,33 @@ const Social = () => {
         </Tabs>
       </main>
       <Footer />
+      
+      <TryOnResultSelector
+        isOpen={showTryOnSelector}
+        onClose={() => setShowTryOnSelector(false)}
+        onSelect={handleSelectTryOnResult}
+        tryOnResults={myTryOnResults}
+      />
+      
+      <EditPostDialog
+        isOpen={showEditPost}
+        onClose={() => setShowEditPost(false)}
+        onSave={handleSavePost}
+        post={editingPost}
+      />
+      
+      <CreateLookbookDialog
+        isOpen={showCreateLookbook}
+        onClose={() => setShowCreateLookbook(false)}
+        onSave={handleCreateLookbook}
+      />
+      
+      <EditLookbookDialog
+        isOpen={showEditLookbook}
+        onClose={() => setShowEditLookbook(false)}
+        onSave={handleSaveLookbook}
+        lookbook={editingLookbook}
+      />
     </div>
   );
 };
