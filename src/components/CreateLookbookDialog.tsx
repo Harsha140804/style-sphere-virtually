@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,13 +22,14 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
   onClose,
   onSave
 }) => {
-  const { getClothingItems } = useWardrobe();
+  const { wardrobeItems } = useWardrobe();
   const { toast } = useToast();
-  const [name, setName] = useState('');
+  
+  const [lookbookName, setLookbookName] = useState('');
+  const [description, setDescription] = useState('');
+  const [theme, setTheme] = useState('');
   const [visibility, setVisibility] = useState('public');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-
-  const clothingItems = getClothingItems();
 
   const handleItemToggle = (itemId: string) => {
     setSelectedItems(prev => 
@@ -40,10 +42,19 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim()) {
+    if (!lookbookName.trim()) {
       toast({
         title: "Missing Information",
         description: "Please enter a lookbook name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!theme.trim()) {
+      toast({
+        title: "Missing Theme",
+        description: "Please specify a theme for your lookbook.",
         variant: "destructive"
       });
       return;
@@ -58,13 +69,22 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
       return;
     }
 
+    // Get selected items details
+    const selectedItemsDetails = wardrobeItems.filter(item => selectedItems.includes(item.id));
+    
     const newLookbook = {
-      id: Date.now(),
-      name: name.trim(),
-      items: selectedItems.length,
+      id: Date.now().toString(),
+      name: lookbookName.trim(),
+      description: description.trim(),
+      theme: theme.trim(),
       visibility,
-      image: "/placeholder.svg",
-      selectedItemIds: selectedItems
+      items: selectedItems.length,
+      image: selectedItemsDetails[0]?.image || "/placeholder.svg",
+      selectedItemIds: selectedItems,
+      selectedItemsDetails,
+      createdAt: new Date().toISOString().split('T')[0],
+      likes: 0,
+      isLiked: false
     };
 
     onSave(newLookbook);
@@ -73,12 +93,14 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
 
     toast({
       title: "Lookbook Created",
-      description: `${name} has been created with ${selectedItems.length} clothing items!`
+      description: `"${lookbookName}" has been created with ${selectedItems.length} clothing items!`
     });
   };
 
   const resetForm = () => {
-    setName('');
+    setLookbookName('');
+    setDescription('');
+    setTheme('');
     setVisibility('public');
     setSelectedItems([]);
   };
@@ -90,21 +112,60 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New Lookbook</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Organize your favorite clothing items into a themed collection
+          </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           <div className="space-y-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="lookbookName">Lookbook Name *</Label>
+                <Input
+                  id="lookbookName"
+                  value={lookbookName}
+                  onChange={(e) => setLookbookName(e.target.value)}
+                  placeholder="e.g., Summer Essentials"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="theme">Theme *</Label>
+                <Select value={theme} onValueChange={setTheme} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="casual">Casual</SelectItem>
+                    <SelectItem value="formal">Formal</SelectItem>
+                    <SelectItem value="party">Party</SelectItem>
+                    <SelectItem value="beach">Beach/Vacation</SelectItem>
+                    <SelectItem value="winter">Winter</SelectItem>
+                    <SelectItem value="spring">Spring</SelectItem>
+                    <SelectItem value="summer">Summer</SelectItem>
+                    <SelectItem value="fall">Fall</SelectItem>
+                    <SelectItem value="minimalist">Minimalist</SelectItem>
+                    <SelectItem value="bohemian">Bohemian</SelectItem>
+                    <SelectItem value="vintage">Vintage</SelectItem>
+                    <SelectItem value="streetwear">Streetwear</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="name">Lookbook Name *</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Summer Essentials"
-                required
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe your lookbook style and inspiration..."
+                rows={2}
               />
             </div>
 
@@ -124,18 +185,21 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
           </div>
 
           <div className="flex-1 overflow-hidden">
-            <Label className="text-base font-medium">Select Clothing Items ({selectedItems.length} selected)</Label>
-            <div className="mt-3 overflow-y-auto max-h-[400px] space-y-3">
-              {clothingItems.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No clothing items in your wardrobe. Add some items first!
-                </p>
+            <Label className="text-base font-medium">
+              Select Clothing Items ({selectedItems.length} selected)
+            </Label>
+            <div className="mt-3 overflow-y-auto max-h-[300px] space-y-3">
+              {wardrobeItems.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No clothing items in your wardrobe.</p>
+                  <p className="text-sm text-muted-foreground mt-2">Add some items first!</p>
+                </div>
               ) : (
-                clothingItems.map((item) => (
+                wardrobeItems.map((item) => (
                   <Card 
                     key={item.id} 
-                    className={`cursor-pointer transition-all ${
-                      selectedItems.includes(item.id) ? 'ring-2 ring-primary' : ''
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      selectedItems.includes(item.id) ? 'ring-2 ring-primary bg-primary/5' : ''
                     }`}
                     onClick={() => handleItemToggle(item.id)}
                   >
@@ -143,10 +207,10 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
                       <div className="flex items-center space-x-3">
                         <Checkbox
                           checked={selectedItems.includes(item.id)}
-                          onChange={() => handleItemToggle(item.id)}
+                          onCheckedChange={() => handleItemToggle(item.id)}
                         />
                         
-                        <div className="w-12 h-12 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                        <div className="w-16 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
                           <img 
                             src={item.image} 
                             alt={item.name}
@@ -161,10 +225,16 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
                               {item.type}
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1 mb-1">
                             <Badge variant="secondary" className="text-xs">{item.color}</Badge>
                             <Badge variant="secondary" className="text-xs">{item.size}</Badge>
+                            <Badge variant="outline" className="text-xs">{item.occasion}</Badge>
                           </div>
+                          <p className="text-xs text-muted-foreground">{item.brand}</p>
+                        </div>
+                        
+                        <div className="text-xs text-muted-foreground flex-shrink-0">
+                          Worn {item.worn}x
                         </div>
                       </div>
                     </CardContent>
@@ -174,11 +244,15 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4 mt-auto">
+          <div className="flex gap-2 pt-4 mt-auto border-t">
             <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1">
+            <Button 
+              type="submit" 
+              className="flex-1"
+              disabled={!lookbookName.trim() || !theme || selectedItems.length === 0}
+            >
               Create Lookbook
             </Button>
           </div>
