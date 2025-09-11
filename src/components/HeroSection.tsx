@@ -44,21 +44,11 @@ export const HeroSection = () => {
               size="hero" 
               className="min-w-[200px]"
               onClick={() => {
-                const tryOnSection = document.getElementById('try-on');
-                if (tryOnSection) {
-                  tryOnSection.scrollIntoView({ behavior: 'smooth' });
-                  // Small delay to ensure scroll completes before focusing
-                  setTimeout(() => {
-                    const tryOnElement = tryOnSection.querySelector('input[type="file"]') as HTMLElement;
-                    if (tryOnElement) {
-                      tryOnElement.focus();
-                    }
-                  }, 1000);
-                }
+                window.location.href = '/#try-on';
               }}
             >
               <Camera className="w-5 h-5 mr-2" />
-              Start Virtual Try-On
+              Try Virtual Fitting
             </Button>
             <Button 
               variant="elegant" 
