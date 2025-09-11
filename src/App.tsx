@@ -12,6 +12,7 @@ import Browse from "./pages/Browse";
 import Wardrobe from "./pages/Wardrobe";
 import Social from "./pages/Social";
 import Profile from "./pages/Profile";
+import Wishlist from "./pages/Wishlist";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
                 <Route path="/wardrobe" element={<Wardrobe />} />
                 <Route path="/social" element={<Social />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/wishlist" element={<Wishlist />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

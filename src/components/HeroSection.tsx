@@ -65,14 +65,11 @@ export const HeroSection = () => {
               size="lg" 
               className="min-w-[200px]"
               onClick={() => {
-                const tryOnSection = document.getElementById('try-on');
-                if (tryOnSection) {
-                  tryOnSection.scrollIntoView({ behavior: 'smooth' });
-                }
+                window.location.href = '/wardrobe';
               }}
             >
               <Upload className="w-5 h-5 mr-2" />
-              Upload Photo
+              Explore Wardrobe
             </Button>
           </div>
 

@@ -50,7 +50,7 @@ export const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">SS</span>
+              <span className="text-white font-bold text-sm">✨</span>
             </div>
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Style Sphere
@@ -95,6 +95,14 @@ export const Header = () => {
               }`}
             >
               Social
+            </Link>
+            <Link 
+              to="/wishlist" 
+              className={`text-foreground hover:text-primary transition-colors ${
+                location.pathname === "/wishlist" ? "text-primary" : ""
+              }`}
+            >
+              Wishlist
             </Link>
           </nav>
 
@@ -215,6 +223,13 @@ export const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Social
+              </Link>
+              <Link 
+                to="/wishlist" 
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Wishlist
               </Link>
               <div className="pt-2">
                 <Button 

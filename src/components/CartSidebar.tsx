@@ -90,11 +90,8 @@ export const CartSidebar = ({ children }: CartSidebarProps) => {
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={clearCart} className="flex-1">
+                  <Button variant="outline" onClick={clearCart} className="w-full">
                     Clear Cart
-                  </Button>
-                  <Button className="flex-1">
-                    Checkout
                   </Button>
                 </div>
               </div>
