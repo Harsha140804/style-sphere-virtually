@@ -273,6 +273,32 @@ const Browse = () => {
                 <div className="flex items-center gap-1 mb-3">
                   <span className="text-sm text-muted-foreground">⭐ {item.rating}</span>
                 </div>
+                <div className="flex flex-wrap gap-1 mb-3">
+                  <a 
+                    href="https://www.myntra.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                  >
+                    Myntra
+                  </a>
+                  <a 
+                    href="https://www.amazon.in" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded hover:bg-yellow-200 transition-colors"
+                  >
+                    Amazon
+                  </a>
+                  <a 
+                    href="https://www.flipkart.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                  >
+                    Flipkart
+                  </a>
+                </div>
                 <div className="flex gap-2">
                   <Button 
                     size="sm" 
