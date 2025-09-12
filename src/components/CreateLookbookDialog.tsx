@@ -105,13 +105,13 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
     setSelectedItems([]);
   };
 
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        resetForm();
+        onClose();
+      }
+    }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New Lookbook</DialogTitle>
@@ -245,7 +245,15 @@ export const CreateLookbookDialog: React.FC<CreateLookbookDialogProps> = ({
           </div>
 
           <div className="flex gap-2 pt-4 mt-auto border-t">
-            <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                resetForm();
+                onClose();
+              }} 
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button 
