@@ -75,12 +75,35 @@ export const CartSidebar = ({ children }: CartSidebarProps) => {
                           {item.quantity}
                         </Badge>
                         <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="w-3 h-3" />
+                     <div className="space-y-1">
+                       <h4 className="font-medium truncate">{item.name}</h4>
+                       <div className="flex flex-wrap gap-1">
+                         <a 
+                           href="https://www.myntra.com" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded hover:bg-orange-200 transition-colors"
+                         >
+                           Myntra
+                         </a>
+                         <a 
+                           href="https://www.amazon.in" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded hover:bg-yellow-200 transition-colors"
+                         >
+                           Amazon
+                         </a>
+                         <a 
+                           href="https://www.flipkart.com" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                         >
+                           Flipkart
+                         </a>
+                       </div>
+                     </div>
                         </Button>
                       </div>
                     </div>
