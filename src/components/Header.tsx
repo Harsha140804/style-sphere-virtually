@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, ShoppingBag, Menu, X, LogOut } from "lucide-react";
+import { Search, User, ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { Badge } from "@/components/ui/badge";
 import { CartSidebar } from "@/components/CartSidebar";
-import { useAuth } from "@/hooks/useAuth";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,7 +15,6 @@ export const Header = () => {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,21 +28,11 @@ export const Header = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed Out",
-        description: "You have been successfully signed out."
-      });
-      navigate("/");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to sign out. Please try again.",
-        variant: "destructive"
-      });
-    }
+  const handleUserClick = () => {
+    toast({
+      title: "User Profile",
+      description: "User profile functionality coming soon!"
+    });
   };
 
   const handleTryNowClick = () => {
@@ -63,7 +50,7 @@ export const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">✨</span>
+              <span className="text-white font-bold text-sm">SS</span>
             </div>
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Style Sphere
@@ -109,14 +96,6 @@ export const Header = () => {
             >
               Social
             </Link>
-            <Link 
-              to="/wishlist" 
-              className={`text-foreground hover:text-primary transition-colors ${
-                location.pathname === "/wishlist" ? "text-primary" : ""
-              }`}
-            >
-              Wishlist
-            </Link>
           </nav>
 
           {/* Search Bar - Desktop */}
@@ -158,32 +137,11 @@ export const Header = () => {
                 )}
               </Button>
             </CartSidebar>
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="w-full cursor-pointer">
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link to="/auth">
-                <Button variant="ghost" size="icon">
-                  <User className="w-4 h-4" />
-                </Button>
-              </Link>
-            )}
+            <Link to="/profile">
+              <Button variant="ghost" size="icon">
+                <User className="w-4 h-4" />
+              </Button>
+            </Link>
             <Button 
               variant="ghost" 
               size="icon" 
@@ -257,13 +215,6 @@ export const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Social
-              </Link>
-              <Link 
-                to="/wishlist" 
-                className="text-foreground hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Wishlist
               </Link>
               <div className="pt-2">
                 <Button 

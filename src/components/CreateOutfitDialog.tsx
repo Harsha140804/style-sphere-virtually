@@ -128,9 +128,9 @@ export const CreateOutfitDialog: React.FC<CreateOutfitDialogProps> = ({ isOpen, 
                   >
                     <CardContent className="p-3">
                       <div className="flex items-center space-x-3">
-                         <Checkbox
+                        <Checkbox
                           checked={selectedItems.includes(item.id)}
-                          onCheckedChange={() => handleItemToggle(item.id)}
+                          onChange={() => handleItemToggle(item.id)}
                         />
                         
                         <div className="w-12 h-12 bg-muted rounded-md overflow-hidden flex-shrink-0">

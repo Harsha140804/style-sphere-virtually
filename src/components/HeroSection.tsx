@@ -44,22 +44,35 @@ export const HeroSection = () => {
               size="hero" 
               className="min-w-[200px]"
               onClick={() => {
-                window.location.href = '/#try-on';
+                const tryOnSection = document.getElementById('try-on');
+                if (tryOnSection) {
+                  tryOnSection.scrollIntoView({ behavior: 'smooth' });
+                  // Small delay to ensure scroll completes before focusing
+                  setTimeout(() => {
+                    const tryOnElement = tryOnSection.querySelector('input[type="file"]') as HTMLElement;
+                    if (tryOnElement) {
+                      tryOnElement.focus();
+                    }
+                  }, 1000);
+                }
               }}
             >
               <Camera className="w-5 h-5 mr-2" />
-              Try Virtual Fitting
+              Start Virtual Try-On
             </Button>
             <Button 
               variant="elegant" 
               size="lg" 
               className="min-w-[200px]"
               onClick={() => {
-                window.location.href = '/wardrobe';
+                const tryOnSection = document.getElementById('try-on');
+                if (tryOnSection) {
+                  tryOnSection.scrollIntoView({ behavior: 'smooth' });
+                }
               }}
             >
               <Upload className="w-5 h-5 mr-2" />
-              Explore Wardrobe
+              Upload Photo
             </Button>
           </div>
 

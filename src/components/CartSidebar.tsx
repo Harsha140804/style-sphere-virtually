@@ -37,22 +37,17 @@ export const CartSidebar = ({ children }: CartSidebarProps) => {
             <>
               <div className="flex-1 overflow-auto space-y-4">
                 {items.map((item) => (
-                   <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
-                     <img 
-                       src={item.image} 
-                       alt={item.name}
-                       className="w-16 h-16 object-cover rounded"
-                     />
-                     <div className="flex-1 min-w-0">
-                       <a 
-                         href={`/browse?search=${encodeURIComponent(item.name)}`}
-                         className="font-medium truncate hover:text-primary transition-colors"
-                       >
-                         {item.name}
-                       </a>
-                       <p className="text-sm text-muted-foreground">{item.category}</p>
-                       <p className="font-semibold text-primary">{item.price}</p>
-                     </div>
+                  <div key={item.id} className="flex gap-3 p-3 border rounded-lg">
+                    <img 
+                      src={item.image} 
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground">{item.category}</p>
+                      <p className="font-semibold text-primary">{item.price}</p>
+                    </div>
                     <div className="flex flex-col items-end gap-2">
                       <Button
                         variant="ghost"
@@ -95,8 +90,11 @@ export const CartSidebar = ({ children }: CartSidebarProps) => {
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={clearCart} className="w-full">
+                  <Button variant="outline" onClick={clearCart} className="flex-1">
                     Clear Cart
+                  </Button>
+                  <Button className="flex-1">
+                    Checkout
                   </Button>
                 </div>
               </div>
