@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, ShoppingCart, Camera, Sparkles, Ruler, Share2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import tryOnImage from "@/assets/tryon-feature.jpg";
 import wardrobeImage from "@/assets/wardrobe-feature.jpg";
 
@@ -49,9 +50,11 @@ export const FeaturesSection = () => {
                 <span>Layer multiple items for complete outfits</span>
               </li>
             </ul>
-            <Button variant="fashion" size="lg" className="w-fit">
-              Try Virtual Fitting <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <Link to="/browse">
+              <Button variant="fashion" size="lg" className="w-fit">
+                Try Virtual Fitting <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
           
           <div className="order-1 lg:order-2">
@@ -103,9 +106,11 @@ export const FeaturesSection = () => {
                 <span>Plan outfits for special occasions</span>
               </li>
             </ul>
-            <Button variant="teal" size="lg" className="w-fit">
-              Explore Wardrobe <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <Link to="/wardrobe">
+              <Button variant="teal" size="lg" className="w-fit">
+                Explore Wardrobe <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
         </div>
 
