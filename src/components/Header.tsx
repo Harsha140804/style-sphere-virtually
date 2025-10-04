@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button";
-import { Search, User, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, User, ShoppingBag, Menu, X, Heart } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { Badge } from "@/components/ui/badge";
 import { CartSidebar } from "@/components/CartSidebar";
+import { WishlistSidebar } from "@/components/WishlistSidebar";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { totalItems } = useCart();
+  const { totalItems: wishlistTotal } = useWishlist();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
@@ -50,7 +53,7 @@ export const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">S²</span>
+              <span className="text-white font-bold text-lg">🌐</span>
             </div>
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Style Sphere
@@ -124,6 +127,19 @@ export const Header = () => {
             >
               <Search className="w-4 h-4" />
             </Button>
+            <WishlistSidebar>
+              <Button variant="ghost" size="icon" className="relative">
+                <Heart className="w-4 h-4" />
+                {wishlistTotal > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs p-0"
+                  >
+                    {wishlistTotal}
+                  </Badge>
+                )}
+              </Button>
+            </WishlistSidebar>
             <CartSidebar>
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingBag className="w-4 h-4" />
