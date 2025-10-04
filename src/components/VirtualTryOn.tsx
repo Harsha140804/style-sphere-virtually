@@ -85,6 +85,10 @@ export const VirtualTryOn = () => {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        // Ensure video plays
+        await videoRef.current.play().catch(err => {
+          console.error('Error playing video:', err);
+        });
       }
       
       toast({
@@ -115,7 +119,14 @@ export const VirtualTryOn = () => {
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !videoRef.current.videoWidth) {
+      toast({
+        title: "Camera not ready",
+        description: "Please wait for camera to initialize",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -131,9 +142,13 @@ export const VirtualTryOn = () => {
         setUploadedImage(imageUrl);
         stopCamera();
         setCurrentStep('gender');
+        toast({
+          title: "Photo captured!",
+          description: "Please select your gender to continue"
+        });
       }
-    }, 'image/jpeg', 0.8);
-  }, [stopCamera]);
+    }, 'image/jpeg', 0.95);
+  }, [stopCamera, toast]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
