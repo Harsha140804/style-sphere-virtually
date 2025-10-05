@@ -9,18 +9,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { User, Camera, Bell, Globe, Lock, Trash2, Ruler, X, LogOut } from "lucide-react";
+import { User, Camera, Bell, Globe, Lock, Trash2, Ruler, X, LogOut, Users } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ColorPicker } from "@/components/ColorPicker";
 import { BrandSelector } from "@/components/BrandSelector";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useRelationships } from "@/hooks/useRelationships";
+import { FollowersDialog } from "@/components/FollowersDialog";
 
 const Profile = () => {
   const { toast } = useToast();
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { followers, following } = useRelationships();
+  const [showFollowersDialog, setShowFollowersDialog] = useState(false);
+  const [showFollowingDialog, setShowFollowingDialog] = useState(false);
   const [profileImage, setProfileImage] = useState<string>("/placeholder.svg");
   const [profileData, setProfileData] = useState({
     name: "Sarah Johnson",
@@ -221,6 +226,36 @@ const Profile = () => {
                 </div>
 
                 <Button onClick={handleSaveProfile}>Save Profile</Button>
+              </CardContent>
+            </Card>
+
+            {/* Followers/Following Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  Social Stats
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col items-center gap-2"
+                    onClick={() => setShowFollowersDialog(true)}
+                  >
+                    <span className="text-2xl font-bold">{followers.length}</span>
+                    <span className="text-sm text-muted-foreground">Followers</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-auto py-4 flex flex-col items-center gap-2"
+                    onClick={() => setShowFollowingDialog(true)}
+                  >
+                    <span className="text-2xl font-bold">{following.length}</span>
+                    <span className="text-sm text-muted-foreground">Following</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -493,6 +528,20 @@ const Profile = () => {
         </Tabs>
       </main>
       <Footer />
+      
+      <FollowersDialog
+        open={showFollowersDialog}
+        onOpenChange={setShowFollowersDialog}
+        title="Followers"
+        users={followers}
+      />
+      
+      <FollowersDialog
+        open={showFollowingDialog}
+        onOpenChange={setShowFollowingDialog}
+        title="Following"
+        users={following}
+      />
     </div>
   );
 };

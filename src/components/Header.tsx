@@ -8,6 +8,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { Badge } from "@/components/ui/badge";
 import { CartSidebar } from "@/components/CartSidebar";
 import { WishlistSidebar } from "@/components/WishlistSidebar";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -127,6 +128,7 @@ export const Header = () => {
             >
               <Search className="w-4 h-4" />
             </Button>
+            <NotificationBell />
             <WishlistSidebar>
               <Button variant="ghost" size="icon" className="relative">
                 <Heart className="w-4 h-4" />

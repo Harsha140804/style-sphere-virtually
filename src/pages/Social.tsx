@@ -1,200 +1,106 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, MessageCircle, Share2, Plus, Camera, Lock, Globe, Users, Edit, Trash2 } from "lucide-react";
+import { Heart, Plus, Camera, Lock, Globe, Users, Edit, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { TryOnResultSelector } from "@/components/TryOnResultSelector";
-import { EditPostDialog } from "@/components/EditPostDialog";
-import { CreateLookbookDialog } from "@/components/CreateLookbookDialog";
-import { EditLookbookDialog } from "@/components/EditLookbookDialog";
+import { useSocialPosts } from "@/hooks/useSocialPosts";
+import { useLookbooks } from "@/hooks/useLookbooks";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useWardrobe } from "@/hooks/useWardrobe";
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatDistanceToNow } from "date-fns";
 
 const Social = () => {
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const { posts, myPosts, loading: postsLoading, createPost, updatePost, deletePost, likePost, unlikePost, isLiked } = useSocialPosts();
+  const { lookbooks, myLookbooks, loading: lookbooksLoading, createLookbook, updateLookbook, deleteLookbook } = useLookbooks();
+  const { wardrobeItems } = useWardrobe();
+  
   const [newPostText, setNewPostText] = useState("");
-  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set([2]));
-  const [selectedTryOnResult, setSelectedTryOnResult] = useState<string | null>(null);
-  const [showTryOnSelector, setShowTryOnSelector] = useState(false);
-  const [showEditPost, setShowEditPost] = useState(false);
-  const [editingPost, setEditingPost] = useState<any>(null);
   const [showCreateLookbook, setShowCreateLookbook] = useState(false);
   const [showEditLookbook, setShowEditLookbook] = useState(false);
   const [editingLookbook, setEditingLookbook] = useState<any>(null);
-  const [feedPosts, setFeedPosts] = useState<any[]>([]);
+  const [showEditPost, setShowEditPost] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  
+  // Lookbook creation state
+  const [newLookbook, setNewLookbook] = useState({
+    name: "",
+    visibility: "public",
+    selectedItems: [] as string[],
+  });
 
-  const mockPosts = [
-    {
-      id: 1,
-      user: { name: "Sarah J.", avatar: "/placeholder.svg", username: "@sarahj" },
-      image: "/placeholder.svg",
-      caption: "Perfect outfit for today's meeting! 💼✨ #ootd #professional",
-      likes: 24,
-      comments: 8,
-      isLiked: false,
-      timestamp: "2h ago"
-    },
-    {
-      id: 2,
-      user: { name: "Emma Wilson", avatar: "/placeholder.svg", username: "@emmaw" },
-      image: "/placeholder.svg",
-      caption: "Casual Friday vibes 🌟 Which look do you prefer?",
-      likes: 156,
-      comments: 23,
-      isLiked: true,
-      timestamp: "4h ago"
-    },
-    {
-      id: 3,
-      user: { name: "Alex Chen", avatar: "/placeholder.svg", username: "@alexc" },
-      image: "/placeholder.svg",
-      caption: "Weekend style inspiration! Loving these colors together 🎨",
-      likes: 89,
-      comments: 12,
-      isLiked: false,
-      timestamp: "1d ago"
-    }
-  ];
-
-  const [myLookbooks, setMyLookbooks] = useState([
-    { id: 1, name: "Summer Essentials", items: 12, visibility: "public", image: "/placeholder.svg", selectedItemIds: [] },
-    { id: 2, name: "Work Outfits", items: 8, visibility: "private", image: "/placeholder.svg", selectedItemIds: [] },
-    { id: 3, name: "Date Night", items: 5, visibility: "friends", image: "/placeholder.svg", selectedItemIds: [] },
-  ]);
-
-  const myTryOnResults = [
-    { id: 1, name: "Black Dress Virtual Try-On", image: "/placeholder.svg", date: "Today" },
-    { id: 2, name: "Blue Jeans + Striped Sweater", image: "/placeholder.svg", date: "Yesterday" },
-    { id: 3, name: "Denim Jacket Outfit", image: "/placeholder.svg", date: "2 days ago" },
-  ];
-
-  const [myStylePosts, setMyStylePosts] = useState([
-    { 
-      id: 1, 
-      image: "/placeholder.svg", 
-      caption: "My latest outfit creation! Loving this color combination 💙", 
-      likes: 15, 
-      timestamp: "1h ago" 
-    },
-    { 
-      id: 2, 
-      image: "/placeholder.svg", 
-      caption: "Weekend casual vibes - comfort meets style ✨", 
-      likes: 8, 
-      timestamp: "3h ago" 
-    }
-  ]);
-
-  const handleLike = (postId: number) => {
-    setLikedPosts(prev => {
-      const newLikedPosts = new Set(prev);
-      if (newLikedPosts.has(postId)) {
-        newLikedPosts.delete(postId);
-        toast({
-          title: "Post Unliked",
-          description: "You unliked this outfit post!"
-        });
-      } else {
-        newLikedPosts.add(postId);
-        toast({
-          title: "Post Liked",
-          description: "You liked this outfit post!"
-        });
-      }
-      return newLikedPosts;
-    });
-  };
-
-  const handleShare = (postId: number) => {
-    toast({
-      title: "Share Options",
-      description: "Share to Instagram, Pinterest, or copy link"
-    });
-  };
-
-  const handleCreatePost = () => {
-    if (newPostText.trim() || selectedTryOnResult) {
-      const newPost = {
-        id: Date.now(),
-        user: { name: "You", avatar: "/placeholder.svg", username: "@you" },
-        image: selectedTryOnResult || "/placeholder.svg",
-        caption: newPostText.trim() || "Check out my latest style!",
-        likes: 0,
-        comments: 0,
-        isLiked: false,
-        timestamp: "now"
-      };
-      
-      // Add to both feed and my posts
-      setFeedPosts(prev => [newPost, ...prev]);
-      setMyStylePosts(prev => [{
-        id: newPost.id,
-        image: newPost.image,
-        caption: newPost.caption,
-        likes: newPost.likes,
-        timestamp: newPost.timestamp
-      }, ...prev]);
-      
-      toast({
-        title: "Post Created",
-        description: "Your outfit post has been shared!"
-      });
+  const handleCreatePost = async () => {
+    if (newPostText.trim()) {
+      await createPost(newPostText);
       setNewPostText("");
-      setSelectedTryOnResult(null);
     }
   };
 
-  const handleSelectTryOnResult = (result: any) => {
-    setSelectedTryOnResult(result.image);
-    toast({
-      title: "Try-On Result Selected",
-      description: `${result.name} added to your post!`
-    });
+  const handleLikeToggle = async (post: any) => {
+    if (isLiked(post)) {
+      await unlikePost(post.id);
+    } else {
+      await likePost(post.id);
+    }
   };
 
-  const handleEditPost = (post: any) => {
-    setEditingPost(post);
-    setShowEditPost(true);
+  const handleSavePost = async () => {
+    if (editingPost) {
+      await updatePost(editingPost.id, editingPost.caption);
+      setShowEditPost(false);
+      setEditingPost(null);
+    }
   };
 
-  const handleSavePost = (postId: number, newCaption: string) => {
-    setMyStylePosts(prev => prev.map(post => 
-      post.id === postId ? { ...post, caption: newCaption } : post
-    ));
-    toast({
-      title: "Post Updated",
-      description: "Your post caption has been updated!"
-    });
+  const handleCreateLookbookSubmit = async () => {
+    if (newLookbook.name.trim() && newLookbook.selectedItems.length > 0) {
+      await createLookbook(
+        newLookbook.name,
+        newLookbook.visibility,
+        newLookbook.selectedItems
+      );
+      setShowCreateLookbook(false);
+      setNewLookbook({ name: "", visibility: "public", selectedItems: [] });
+    }
   };
 
-  const handleCreateLookbook = (lookbook: any) => {
-    setMyLookbooks(prev => [...prev, lookbook]);
+  const handleEditLookbookSubmit = async () => {
+    if (editingLookbook) {
+      await updateLookbook(editingLookbook.id, {
+        item_ids: newLookbook.selectedItems,
+      });
+      setShowEditLookbook(false);
+      setEditingLookbook(null);
+      setNewLookbook({ name: "", visibility: "public", selectedItems: [] });
+    }
   };
 
-  const handleEditLookbook = (lookbook: any) => {
-    setEditingLookbook(lookbook);
-    setShowEditLookbook(true);
+  const handleItemToggle = (itemId: string) => {
+    setNewLookbook(prev => ({
+      ...prev,
+      selectedItems: prev.selectedItems.includes(itemId)
+        ? prev.selectedItems.filter(id => id !== itemId)
+        : [...prev.selectedItems, itemId]
+    }));
   };
 
-  const handleSaveLookbook = (lookbookId: number, selectedItems: string[], itemCount: number) => {
-    setMyLookbooks(prev => prev.map(lookbook => 
-      lookbook.id === lookbookId 
-        ? { ...lookbook, selectedItemIds: selectedItems, items: itemCount }
-        : lookbook
-    ));
-  };
-
-  const handleDeleteLookbook = (lookbookId: number) => {
-    setMyLookbooks(prev => prev.filter(lookbook => lookbook.id !== lookbookId));
-    toast({
-      title: "Lookbook Deleted",
-      description: "Your lookbook has been removed"
-    });
-  };
+  if (postsLoading || lookbooksLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -216,10 +122,10 @@ const Social = () => {
             {/* Create Post */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Camera className="w-5 h-5" />
-                  Share Your Style
-                </CardTitle>
+                  <h2 className="text-lg font-semibold">Share Your Style</h2>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Textarea
@@ -227,91 +133,67 @@ const Social = () => {
                   value={newPostText}
                   onChange={(e) => setNewPostText(e.target.value)}
                 />
-                <div className="flex justify-between items-center">
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/*';
-                        input.onchange = (e) => {
-                          const file = (e.target as HTMLInputElement).files?.[0];
-                          if (file) {
-                            toast({
-                              title: "Photo Added",
-                              description: `${file.name} ready to post!`
-                            });
-                          }
-                        };
-                        input.click();
-                      }}
-                    >
-                      <Camera className="w-4 h-4 mr-2" />
-                      Add Photo
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setShowTryOnSelector(true)}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Try-On Result
-                    </Button>
-                  </div>
-                  <Button onClick={handleCreatePost}>Post</Button>
+                <div className="flex justify-end">
+                  <Button onClick={handleCreatePost} disabled={!newPostText.trim()}>
+                    Post
+                  </Button>
                 </div>
-                {selectedTryOnResult && (
-                  <div className="p-3 bg-accent/50 rounded-lg">
-                    <p className="text-sm font-medium mb-2">Selected Try-On Result:</p>
-                    <div className="w-20 h-20 bg-muted rounded-lg overflow-hidden">
-                      <img src={selectedTryOnResult} alt="Selected try-on" className="w-full h-full object-cover" />
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
             {/* Posts Feed */}
             <div className="space-y-6">
-              {[...feedPosts, ...mockPosts].map((post) => (
-                <Card key={post.id}>
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={post.user.avatar} />
-                        <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <p className="font-semibold">{post.user.name}</p>
-                        <p className="text-sm text-muted-foreground">{post.user.username} • {post.timestamp}</p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                      <img 
-                        src={post.image} 
-                        alt="Outfit post"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="text-sm">{post.caption}</p>
-                    <div className="flex items-center">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className={likedPosts.has(post.id) ? "text-destructive" : ""}
-                        onClick={() => handleLike(post.id)}
-                      >
-                        <Heart className={`w-4 h-4 mr-2 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
-                        {post.likes + (likedPosts.has(post.id) && !post.isLiked ? 1 : 0) - (!likedPosts.has(post.id) && post.isLiked ? 1 : 0)}
-                      </Button>
-                    </div>
+              {posts.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No posts yet. Follow users to see their posts!
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                posts.map((post) => (
+                  <Card key={post.id}>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={post.profiles?.avatar_url} />
+                          <AvatarFallback>
+                            {post.profiles?.full_name?.charAt(0) || post.profiles?.email?.charAt(0) || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <p className="font-semibold">{post.profiles?.full_name || 'Anonymous'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {post.image_url && (
+                        <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                          <img 
+                            src={post.image_url} 
+                            alt="Post"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {post.caption && <p className="text-sm">{post.caption}</p>}
+                      <div className="flex items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className={isLiked(post) ? "text-destructive" : ""}
+                          onClick={() => handleLikeToggle(post)}
+                        >
+                          <Heart className={`w-4 h-4 mr-2 ${isLiked(post) ? "fill-current" : ""}`} />
+                          {post.post_likes?.length || 0}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
@@ -321,46 +203,53 @@ const Social = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myStylePosts.map((post) => (
-                <Card key={post.id} className="hover:shadow-elegant transition-shadow duration-300">
-                  <CardContent className="p-4">
-                    <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
-                      <img 
-                        src={post.image} 
-                        alt="My outfit post"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="text-sm mb-2 line-clamp-2">{post.caption}</p>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{post.likes} likes</span>
-                      <span>{post.timestamp}</span>
-                    </div>
-                    <div className="flex gap-2 mt-3">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditPost(post)}
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setMyStylePosts(prev => prev.filter(p => p.id !== post.id));
-                          toast({
-                            title: "Post Deleted",
-                            description: "Your post has been removed"
-                          });
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
+              {myPosts.length === 0 ? (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    You haven't created any posts yet
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                myPosts.map((post) => (
+                  <Card key={post.id} className="hover:shadow-elegant transition-shadow duration-300">
+                    <CardContent className="p-4">
+                      {post.image_url && (
+                        <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
+                          <img 
+                            src={post.image_url} 
+                            alt="My post"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      {post.caption && <p className="text-sm mb-2 line-clamp-2">{post.caption}</p>}
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                        <span>{post.post_likes?.length || 0} likes</span>
+                        <span>{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setEditingPost(post);
+                            setShowEditPost(true);
+                          }}
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => deletePost(post.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
@@ -374,83 +263,203 @@ const Social = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {myLookbooks.map((lookbook) => (
-                <Card key={lookbook.id} className="hover:shadow-elegant transition-shadow duration-300">
-                  <CardContent className="p-4">
-                    <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
-                      <img 
-                        src={lookbook.image} 
-                        alt={lookbook.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <h3 className="font-semibold mb-2">{lookbook.name}</h3>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-muted-foreground">{lookbook.items} clothing items</span>
-                      <Badge variant="outline" className="flex items-center gap-1 text-xs">
-                        {lookbook.visibility === "public" && <Globe className="w-3 h-3" />}
-                        {lookbook.visibility === "private" && <Lock className="w-3 h-3" />}
-                        {lookbook.visibility === "friends" && <Users className="w-3 h-3" />}
-                        {lookbook.visibility}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleEditLookbook(lookbook)}
-                      >
-                        <Edit className="w-3 h-3 mr-2" />
-                        Edit Items
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          if (window.confirm(`Delete ${lookbook.name}?`)) {
-                            handleDeleteLookbook(lookbook.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
+              {myLookbooks.length === 0 ? (
+                <Card className="col-span-full">
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    You haven't created any lookbooks yet
                   </CardContent>
                 </Card>
-              ))}
+              ) : (
+                myLookbooks.map((lookbook) => (
+                  <Card key={lookbook.id} className="hover:shadow-elegant transition-shadow duration-300">
+                    <CardContent className="p-4">
+                      {lookbook.image && (
+                        <div className="aspect-square bg-muted rounded-lg mb-3 overflow-hidden">
+                          <img 
+                            src={lookbook.image} 
+                            alt={lookbook.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <h3 className="font-semibold mb-2">{lookbook.name}</h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm text-muted-foreground">
+                          {lookbook.item_ids?.length || 0} items
+                        </span>
+                        <Badge variant="outline" className="flex items-center gap-1 text-xs">
+                          {lookbook.visibility === "public" && <Globe className="w-3 h-3" />}
+                          {lookbook.visibility === "private" && <Lock className="w-3 h-3" />}
+                          {lookbook.visibility === "friends-only" && <Users className="w-3 h-3" />}
+                          {lookbook.visibility}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => {
+                            setEditingLookbook(lookbook);
+                            setNewLookbook({
+                              name: lookbook.name,
+                              visibility: lookbook.visibility,
+                              selectedItems: lookbook.item_ids || [],
+                            });
+                            setShowEditLookbook(true);
+                          }}
+                        >
+                          <Edit className="w-3 h-3 mr-2" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => deleteLookbook(lookbook.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
         </Tabs>
       </main>
       <Footer />
       
-      <TryOnResultSelector
-        isOpen={showTryOnSelector}
-        onClose={() => setShowTryOnSelector(false)}
-        onSelect={handleSelectTryOnResult}
-        tryOnResults={myTryOnResults}
-      />
-      
-      <EditPostDialog
-        isOpen={showEditPost}
-        onClose={() => setShowEditPost(false)}
-        onSave={handleSavePost}
-        post={editingPost}
-      />
-      
-      <CreateLookbookDialog
-        isOpen={showCreateLookbook}
-        onClose={() => setShowCreateLookbook(false)}
-        onSave={handleCreateLookbook}
-      />
-      
-      <EditLookbookDialog
-        isOpen={showEditLookbook}
-        onClose={() => setShowEditLookbook(false)}
-        onSave={handleSaveLookbook}
-        lookbook={editingLookbook}
-      />
+      {/* Edit Post Dialog */}
+      <Dialog open={showEditPost} onOpenChange={setShowEditPost}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Post</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Textarea
+              value={editingPost?.caption || ""}
+              onChange={(e) => setEditingPost({ ...editingPost, caption: e.target.value })}
+              placeholder="Edit your caption..."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditPost(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSavePost}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Lookbook Dialog */}
+      <Dialog open={showCreateLookbook} onOpenChange={setShowCreateLookbook}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Lookbook</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="lookbook-name">Lookbook Name</Label>
+              <Input
+                id="lookbook-name"
+                value={newLookbook.name}
+                onChange={(e) => setNewLookbook({ ...newLookbook, name: e.target.value })}
+                placeholder="e.g., Summer Essentials"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="visibility">Visibility</Label>
+              <Select value={newLookbook.visibility} onValueChange={(value) => setNewLookbook({ ...newLookbook, visibility: value })}>
+                <SelectTrigger id="visibility">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4" />
+                      Public
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="friends-only">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Friends Only
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="private">
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Private
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Select Items ({newLookbook.selectedItems.length})</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
+                {wardrobeItems.map((item) => (
+                  <div key={item.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
+                    <Checkbox
+                      checked={newLookbook.selectedItems.includes(item.id)}
+                      onCheckedChange={() => handleItemToggle(item.id)}
+                    />
+                    <div className="flex-1">
+                      <img src={item.image} alt={item.name} className="w-full h-24 object-cover rounded mb-1" />
+                      <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateLookbook(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateLookbookSubmit} disabled={!newLookbook.name.trim() || newLookbook.selectedItems.length === 0}>
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Lookbook Dialog */}
+      <Dialog open={showEditLookbook} onOpenChange={setShowEditLookbook}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Lookbook</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Items ({newLookbook.selectedItems.length})</Label>
+              <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
+                {wardrobeItems.map((item) => (
+                  <div key={item.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
+                    <Checkbox
+                      checked={newLookbook.selectedItems.includes(item.id)}
+                      onCheckedChange={() => handleItemToggle(item.id)}
+                    />
+                    <div className="flex-1">
+                      <img src={item.image} alt={item.name} className="w-full h-24 object-cover rounded mb-1" />
+                      <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditLookbook(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditLookbookSubmit}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
