@@ -9,14 +9,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { User, Camera, Bell, Globe, Lock, Trash2, Ruler, X } from "lucide-react";
+import { User, Camera, Bell, Globe, Lock, Trash2, Ruler, X, LogOut } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ColorPicker } from "@/components/ColorPicker";
 import { BrandSelector } from "@/components/BrandSelector";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { toast } = useToast();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
   const [profileImage, setProfileImage] = useState<string>("/placeholder.svg");
   const [profileData, setProfileData] = useState({
     name: "Sarah Johnson",
@@ -443,6 +447,29 @@ const Profile = () => {
                     onCheckedChange={(checked) => setSettings({...settings, shareData: checked})}
                   />
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Account</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button 
+                  variant="outline" 
+                  onClick={async () => {
+                    await signOut();
+                    toast({
+                      title: "Signed out",
+                      description: "You have been successfully signed out"
+                    });
+                    navigate('/auth');
+                  }} 
+                  className="w-full"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
               </CardContent>
             </Card>
 
