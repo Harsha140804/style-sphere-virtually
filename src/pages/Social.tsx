@@ -91,6 +91,7 @@ const Social = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, email, avatar_url')
+        .neq('id', user?.id)
         .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
         .limit(10);
 
