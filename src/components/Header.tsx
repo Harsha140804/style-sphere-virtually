@@ -64,19 +64,6 @@ export const Header = () => {
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link 
-              to="/" 
-              className={`text-foreground hover:text-primary transition-colors ${
-                location.pathname === "/" && location.hash === "#try-on" ? "text-primary" : ""
-              }`}
-              onClick={() => {
-                if (location.pathname === "/") {
-                  document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-            >
-              Try On
-            </Link>
-            <Link 
               to="/browse" 
               className={`text-foreground hover:text-primary transition-colors ${
                 location.pathname === "/browse" ? "text-primary" : ""
@@ -201,18 +188,6 @@ export const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="flex flex-col space-y-4">
-              <Link 
-                to="/" 
-                className="text-foreground hover:text-primary transition-colors"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  if (location.pathname === "/") {
-                    document.getElementById('try-on')?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-              >
-                Try On
-              </Link>
               <Link 
                 to="/browse" 
                 className="text-foreground hover:text-primary transition-colors"

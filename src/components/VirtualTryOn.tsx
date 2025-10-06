@@ -454,18 +454,6 @@ export const VirtualTryOn = () => {
                   {isProcessing ? 'Processing...' : 'Choose Photo'}
                 </Button>
 
-                {!isCameraActive && (
-                  <Button
-                    size="lg"
-                    onClick={startCamera}
-                    disabled={isProcessing}
-                    variant="elegant"
-                    className="min-w-[200px]"
-                  >
-                    <Video className="w-5 h-5 mr-2" />
-                    Use Camera
-                  </Button>
-                )}
 
                 <div className="text-sm text-muted-foreground">
                   Supported formats: JPG, PNG, WEBP
