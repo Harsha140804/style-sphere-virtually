@@ -6,8 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Heart, Plus, Camera, Lock, Globe, Users, Edit, Trash2, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { Heart, Plus, Camera, Lock, Globe, Users, Edit, Trash2, Loader2, Search, Upload, X } from "lucide-react";
+import { useState, useRef } from "react";
 import { useSocialPosts } from "@/hooks/useSocialPosts";
 import { useLookbooks } from "@/hooks/useLookbooks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,14 +18,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useWardrobe } from "@/hooks/useWardrobe";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDistanceToNow } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
+import { FollowButton } from "@/components/FollowButton";
+import { useRelationships } from "@/hooks/useRelationships";
 
 const Social = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { posts, myPosts, loading: postsLoading, createPost, updatePost, deletePost, likePost, unlikePost, isLiked } = useSocialPosts();
   const { lookbooks, myLookbooks, loading: lookbooksLoading, createLookbook, updateLookbook, deleteLookbook } = useLookbooks();
-  const { wardrobeItems } = useWardrobe();
+  const { wardrobeItems, outfits } = useWardrobe();
+  const { followUser, unfollowUser, isFollowing } = useRelationships();
   
   const [newPostText, setNewPostText] = useState("");
+  const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [showCreateLookbook, setShowCreateLookbook] = useState(false);
   const [showEditLookbook, setShowEditLookbook] = useState(false);
   const [editingLookbook, setEditingLookbook] = useState<any>(null);
@@ -37,12 +50,55 @@ const Social = () => {
     name: "",
     visibility: "public",
     selectedItems: [] as string[],
+    selectedOutfits: [] as string[],
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewPostImage(reader.result as string);
+        setUploadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setUploadingImage(false);
+    }
+  };
+
   const handleCreatePost = async () => {
-    if (newPostText.trim()) {
-      await createPost(newPostText);
+    if (newPostText.trim() || newPostImage) {
+      await createPost(newPostText, newPostImage || undefined);
       setNewPostText("");
+      setNewPostImage(null);
+    }
+  };
+
+  const handleSearchUsers = async (query: string) => {
+    setSearchQuery(query);
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Error searching users:', error);
     }
   };
 
@@ -63,25 +119,44 @@ const Social = () => {
   };
 
   const handleCreateLookbookSubmit = async () => {
-    if (newLookbook.name.trim() && newLookbook.selectedItems.length > 0) {
+    const allItemIds = [...newLookbook.selectedItems];
+    
+    // Add items from selected outfits
+    newLookbook.selectedOutfits.forEach(outfitId => {
+      const outfit = outfits.find(o => o.id === outfitId);
+      if (outfit) {
+        allItemIds.push(...outfit.items);
+      }
+    });
+
+    if (newLookbook.name.trim() && allItemIds.length > 0) {
       await createLookbook(
         newLookbook.name,
         newLookbook.visibility,
-        newLookbook.selectedItems
+        allItemIds
       );
       setShowCreateLookbook(false);
-      setNewLookbook({ name: "", visibility: "public", selectedItems: [] });
+      setNewLookbook({ name: "", visibility: "public", selectedItems: [], selectedOutfits: [] });
     }
   };
 
   const handleEditLookbookSubmit = async () => {
     if (editingLookbook) {
+      const allItemIds = [...newLookbook.selectedItems];
+      
+      newLookbook.selectedOutfits.forEach(outfitId => {
+        const outfit = outfits.find(o => o.id === outfitId);
+        if (outfit) {
+          allItemIds.push(...outfit.items);
+        }
+      });
+
       await updateLookbook(editingLookbook.id, {
-        item_ids: newLookbook.selectedItems,
+        item_ids: allItemIds,
       });
       setShowEditLookbook(false);
       setEditingLookbook(null);
-      setNewLookbook({ name: "", visibility: "public", selectedItems: [] });
+      setNewLookbook({ name: "", visibility: "public", selectedItems: [], selectedOutfits: [] });
     }
   };
 
@@ -91,6 +166,15 @@ const Social = () => {
       selectedItems: prev.selectedItems.includes(itemId)
         ? prev.selectedItems.filter(id => id !== itemId)
         : [...prev.selectedItems, itemId]
+    }));
+  };
+
+  const handleOutfitToggle = (outfitId: string) => {
+    setNewLookbook(prev => ({
+      ...prev,
+      selectedOutfits: prev.selectedOutfits.includes(outfitId)
+        ? prev.selectedOutfits.filter(id => id !== outfitId)
+        : [...prev.selectedOutfits, outfitId]
     }));
   };
 
@@ -109,6 +193,46 @@ const Social = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-4">Style Social</h1>
           <p className="text-muted-foreground mb-6">Share your style and discover fashion inspiration</p>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search users by name or email..."
+              value={searchQuery}
+              onChange={(e) => handleSearchUsers(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+              className="pl-10"
+            />
+            {showSearchResults && searchResults.length > 0 && (
+              <Card className="absolute z-10 w-full mt-2 max-h-60 overflow-y-auto">
+                <CardContent className="p-2">
+                  {searchResults.map((profile) => (
+                    <button
+                      key={profile.id}
+                      onClick={() => {
+                        navigate(`/profile/${profile.id}`);
+                        setShowSearchResults(false);
+                        setSearchQuery("");
+                      }}
+                      className="w-full flex items-center gap-3 p-2 hover:bg-accent rounded-lg"
+                    >
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile.avatar_url} />
+                        <AvatarFallback>
+                          {profile.full_name?.charAt(0) || profile.email?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left">
+                        <p className="font-medium">{profile.full_name || 'Anonymous'}</p>
+                        <p className="text-sm text-muted-foreground">{profile.email}</p>
+                      </div>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="feed" className="space-y-6">
@@ -133,8 +257,45 @@ const Social = () => {
                   value={newPostText}
                   onChange={(e) => setNewPostText(e.target.value)}
                 />
-                <div className="flex justify-end">
-                  <Button onClick={handleCreatePost} disabled={!newPostText.trim()}>
+                
+                {newPostImage && (
+                  <div className="relative">
+                    <img src={newPostImage} alt="Upload preview" className="w-full h-48 object-cover rounded-lg" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={() => setNewPostImage(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImage}
+                    >
+                      {uploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      Upload Photo
+                    </Button>
+                  </div>
+                  <Button onClick={handleCreatePost} disabled={(!newPostText.trim() && !newPostImage) || uploadingImage}>
                     Post
                   </Button>
                 </div>
@@ -154,18 +315,33 @@ const Social = () => {
                   <Card key={post.id}>
                     <CardHeader>
                       <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={post.profiles?.avatar_url} />
-                          <AvatarFallback>
-                            {post.profiles?.full_name?.charAt(0) || post.profiles?.email?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-semibold">{post.profiles?.full_name || 'Anonymous'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
+                        <button
+                          onClick={() => navigate(`/profile/${post.user_id}`)}
+                          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                        >
+                          <Avatar>
+                            <AvatarImage src={post.profiles?.avatar_url} />
+                            <AvatarFallback>
+                              {post.profiles?.full_name?.charAt(0) || post.profiles?.email?.charAt(0) || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="text-left">
+                            <p className="font-semibold">{post.profiles?.full_name || 'Anonymous'}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </button>
+                        {post.user_id !== user?.id && (
+                          <div className="ml-auto">
+                            <FollowButton
+                              userId={post.user_id}
+                              isFollowing={isFollowing(post.user_id)}
+                              onFollow={followUser}
+                              onUnfollow={unfollowUser}
+                            />
+                          </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -305,6 +481,7 @@ const Social = () => {
                               name: lookbook.name,
                               visibility: lookbook.visibility,
                               selectedItems: lookbook.item_ids || [],
+                              selectedOutfits: [],
                             });
                             setShowEditLookbook(true);
                           }}
@@ -396,29 +573,59 @@ const Social = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Select Items ({newLookbook.selectedItems.length})</Label>
-              <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
-                {wardrobeItems.map((item) => (
-                  <div key={item.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
-                    <Checkbox
-                      checked={newLookbook.selectedItems.includes(item.id)}
-                      onCheckedChange={() => handleItemToggle(item.id)}
-                    />
-                    <div className="flex-1">
-                      <img src={item.image} alt={item.name} className="w-full h-24 object-cover rounded mb-1" />
-                      <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+            <Tabs defaultValue="items" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="items">Wardrobe Items</TabsTrigger>
+                <TabsTrigger value="outfits">Saved Outfits</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="items" className="space-y-2">
+                <Label>Select Items ({newLookbook.selectedItems.length})</Label>
+                <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
+                  {wardrobeItems.map((item) => (
+                    <div key={item.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
+                      <Checkbox
+                        checked={newLookbook.selectedItems.includes(item.id)}
+                        onCheckedChange={() => handleItemToggle(item.id)}
+                      />
+                      <div className="flex-1">
+                        <img src={item.image} alt={item.name} className="w-full h-24 object-cover rounded mb-1" />
+                        <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.type}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="outfits" className="space-y-2">
+                <Label>Select Outfits ({newLookbook.selectedOutfits.length})</Label>
+                <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
+                  {outfits.map((outfit) => (
+                    <div key={outfit.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
+                      <Checkbox
+                        checked={newLookbook.selectedOutfits.includes(outfit.id)}
+                        onCheckedChange={() => handleOutfitToggle(outfit.id)}
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium line-clamp-1">{outfit.name}</p>
+                        <p className="text-xs text-muted-foreground">{outfit.items.length} items</p>
+                        <p className="text-xs text-muted-foreground">{outfit.occasion}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateLookbook(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateLookbookSubmit} disabled={!newLookbook.name.trim() || newLookbook.selectedItems.length === 0}>
+            <Button 
+              onClick={handleCreateLookbookSubmit} 
+              disabled={!newLookbook.name.trim() || (newLookbook.selectedItems.length === 0 && newLookbook.selectedOutfits.length === 0)}
+            >
               Create
             </Button>
           </DialogFooter>
@@ -432,23 +639,50 @@ const Social = () => {
             <DialogTitle>Edit Lookbook</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Select Items ({newLookbook.selectedItems.length})</Label>
-              <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
-                {wardrobeItems.map((item) => (
-                  <div key={item.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
-                    <Checkbox
-                      checked={newLookbook.selectedItems.includes(item.id)}
-                      onCheckedChange={() => handleItemToggle(item.id)}
-                    />
-                    <div className="flex-1">
-                      <img src={item.image} alt={item.name} className="w-full h-24 object-cover rounded mb-1" />
-                      <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+            <Tabs defaultValue="items" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="items">Wardrobe Items</TabsTrigger>
+                <TabsTrigger value="outfits">Saved Outfits</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="items" className="space-y-2">
+                <Label>Select Items ({newLookbook.selectedItems.length})</Label>
+                <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
+                  {wardrobeItems.map((item) => (
+                    <div key={item.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
+                      <Checkbox
+                        checked={newLookbook.selectedItems.includes(item.id)}
+                        onCheckedChange={() => handleItemToggle(item.id)}
+                      />
+                      <div className="flex-1">
+                        <img src={item.image} alt={item.name} className="w-full h-24 object-cover rounded mb-1" />
+                        <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.type}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="outfits" className="space-y-2">
+                <Label>Select Outfits ({newLookbook.selectedOutfits.length})</Label>
+                <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2">
+                  {outfits.map((outfit) => (
+                    <div key={outfit.id} className="flex items-start gap-2 p-2 border rounded-lg hover:bg-accent/50">
+                      <Checkbox
+                        checked={newLookbook.selectedOutfits.includes(outfit.id)}
+                        onCheckedChange={() => handleOutfitToggle(outfit.id)}
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium line-clamp-1">{outfit.name}</p>
+                        <p className="text-xs text-muted-foreground">{outfit.items.length} items</p>
+                        <p className="text-xs text-muted-foreground">{outfit.occasion}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditLookbook(false)}>
