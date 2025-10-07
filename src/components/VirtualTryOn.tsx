@@ -6,18 +6,22 @@ import { Upload, Camera, Sparkles, Download, ArrowLeft, Video, VideoOff } from '
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { removeBackground, loadImage } from '@/lib/background-removal';
-import { OutfitCatalog } from './OutfitCatalog';
+import { OutfitCatalog } from './OutfitCatalog_new';
 import { TryOnResult } from './TryOnResult';
 
+// 🐛 FIX 1: Update the Outfit interface to match the updated type in OutfitCatalog.tsx
+// The scraper only returns a subset of the data originally mocked.
 export interface Outfit {
   id: string;
   name: string;
   image: string;
-  category: string;
-  gender: 'male' | 'female' | 'unisex';
+  // Make category and gender optional/remove them, as they are not scraped
+  category?: string; // Made optional
+  gender?: 'male' | 'female' | 'unisex'; // Made optional
   brand: string;
-  price: number;
-  platform: string;
+  price: number | null; // Price can be null
+  platform: 'Amazon' | 'Flipkart'; // Restrict platform types
+  redirectUrl: string; // Add the redirect URL field
 }
 
 type TryOnStep = 'upload' | 'gender' | 'outfits' | 'result';
@@ -85,10 +89,6 @@ export const VirtualTryOn = () => {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        // Ensure video plays
-        await videoRef.current.play().catch(err => {
-          console.error('Error playing video:', err);
-        });
       }
       
       toast({
@@ -119,14 +119,7 @@ export const VirtualTryOn = () => {
   }, [stream]);
 
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !videoRef.current.videoWidth) {
-      toast({
-        title: "Camera not ready",
-        description: "Please wait for camera to initialize",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!videoRef.current) return;
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -142,13 +135,9 @@ export const VirtualTryOn = () => {
         setUploadedImage(imageUrl);
         stopCamera();
         setCurrentStep('gender');
-        toast({
-          title: "Photo captured!",
-          description: "Please select your gender to continue"
-        });
       }
-    }, 'image/jpeg', 0.95);
-  }, [stopCamera, toast]);
+    }, 'image/jpeg', 0.8);
+  }, [stopCamera]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -162,6 +151,7 @@ export const VirtualTryOn = () => {
     setCurrentStep('outfits');
   };
 
+  // 🐛 FIX 2: Ensure handleOutfitSelect is marked as async to match its implementation.
   const handleOutfitSelect = async (outfit: Outfit) => {
     setSelectedOutfit(outfit);
     setIsProcessing(true);
@@ -454,6 +444,18 @@ export const VirtualTryOn = () => {
                   {isProcessing ? 'Processing...' : 'Choose Photo'}
                 </Button>
 
+                {!isCameraActive && (
+                  <Button
+                    size="lg"
+                    onClick={startCamera}
+                    disabled={isProcessing}
+                    variant="elegant"
+                    className="min-w-[200px]"
+                  >
+                    <Video className="w-5 h-5 mr-2" />
+                    Use Camera
+                  </Button>
+                )}
 
                 <div className="text-sm text-muted-foreground">
                   Supported formats: JPG, PNG, WEBP
@@ -512,6 +514,8 @@ export const VirtualTryOn = () => {
         {currentStep === 'outfits' && selectedGender && (
           <OutfitCatalog
             gender={selectedGender}
+            // 🐛 FIX 3: The onOutfitSelect prop expects an async function, which it now is.
+            // TypeScript will check the Outfit type against the updated interface in THIS file.
             onOutfitSelect={handleOutfitSelect}
             isProcessing={isProcessing}
           />

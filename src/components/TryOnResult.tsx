@@ -4,17 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, Share2, ShoppingCart, Heart, RotateCcw, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Outfit from '@/types/Outfit';
 
-interface Outfit {
-  id: string;
-  name: string;
-  image: string;
-  category: string;
-  gender: 'male' | 'female' | 'unisex';
-  brand: string;
-  price: number;
-  platform: string;
-}
+
 
 interface TryOnResultProps {
   originalImage: string;

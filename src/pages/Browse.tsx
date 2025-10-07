@@ -34,28 +34,28 @@ const Browse = () => {
   
   const mockItems = [
     // Dresses
-    { id: 1, name: "Floral Summer Dress", category: "Dresses", price: 7120, priceText: "₹7,120", image: "/placeholder.svg", rating: 4.5, size: "M", color: "Pink", brand: "Zara", url: "https://www.zara.com" },
-    { id: 2, name: "Elegant Midi Dress", category: "Dresses", price: 8500, priceText: "₹8,500", image: "/placeholder.svg", rating: 4.6, size: "S", color: "Black", brand: "Mango", url: "https://www.mango.com" },
-    { id: 3, name: "Casual Maxi Dress", category: "Dresses", price: 6200, priceText: "₹6,200", image: "/placeholder.svg", rating: 4.4, size: "L", color: "Blue", brand: "H&M", url: "https://www.hm.com" },
-    { id: 4, name: "Party Cocktail Dress", category: "Dresses", price: 9800, priceText: "₹9,800", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Red", brand: "Zara", url: "https://www.zara.com" },
+    { id: 1, name: "Floral Summer Dress", category: "Dresses", price: 7120, priceText: "₹7,120", image: "https://static.zara.net/assets/public/a8ed/26b1/fe984daa806f/1095cbb5e743/08908167330-e1/08908167330-e1.jpg", rating: 4.5, size: "M", color: "Pink", brand: "Zara" },
+    { id: 2, name: "Elegant Midi Dress", category: "Dresses", price: 8500, priceText: "₹8,500", image: "https://assets.myntassets.com/h_1440,q_90,w_1080/v1/assets/images/2024/SEPTEMBER/7/xFZlqk7v_72b3f303d1c741f48aa3147027bf1fed.jpg", rating: 4.6, size: "S", color: "Black", brand: "Mango" },
+    { id: 3, name: "Casual Maxi Dress", category: "Dresses", price: 6200, priceText: "₹6,200", image: "https://image.hm.com/assets/hm/dd/20/dd2046a98255670d6aa2fbad704d1f029132791f.jpg", rating: 4.4, size: "L", color: "Blue", brand: "H&M" },
+    { id: 4, name: "Party Cocktail Dress", category: "Dresses", price: 9800, priceText: "₹9,800", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Red", brand: "Zara" },
     
     // Tops
-    { id: 5, name: "Silk Blouse", category: "Tops", price: 6000, priceText: "₹6,000", image: "/placeholder.svg", rating: 4.3, size: "S", color: "White", brand: "Uniqlo", url: "https://www.uniqlo.com" },
-    { id: 6, name: "Cotton T-Shirt", category: "Tops", price: 2500, priceText: "₹2,500", image: "/placeholder.svg", rating: 4.1, size: "L", color: "Green", brand: "Uniqlo", url: "https://www.uniqlo.com" },
-    { id: 7, name: "Striped Crop Top", category: "Tops", price: 3200, priceText: "₹3,200", image: "/placeholder.svg", rating: 4.2, size: "M", color: "White", brand: "H&M", url: "https://www.hm.com" },
-    { id: 8, name: "Formal Shirt", category: "Tops", price: 4500, priceText: "₹4,500", image: "/placeholder.svg", rating: 4.5, size: "S", color: "Blue", brand: "COS", url: "https://www.cosstores.com" },
+    { id: 5, name: "Silk Blouse", category: "Tops", price: 6000, priceText: "₹6,000", image: "https://image.uniqlo.com/UQ/ST3/in/imagesgoods/466337/item/ingoods_01_466337_3x4.jpg", rating: 4.3, size: "S", color: "White", brand: "Uniqlo" },
+    { id: 6, name: "Cotton T-Shirt", category: "Tops", price: 2500, priceText: "₹2,500", image: "/placeholder.svg", rating: 4.1, size: "L", color: "Green", brand: "Uniqlo" },
+    { id: 7, name: "Striped Crop Top", category: "Tops", price: 3200, priceText: "₹3,200", image: "https://image.hm.com/assets/hm/5e/6e/5e6ecfe7816100a49436c83a7f8abd880964ed2c.jpg", rating: 4.2, size: "M", color: "White", brand: "H&M" },
+    { id: 8, name: "Formal Shirt", category: "Tops", price: 4500, priceText: "₹4,500", image: "https://cdn.shopify.com/s/files/1/0420/7073/7058/products/4MSS1813-09-M3372_fd0fc4d3-6632-4afd-8068-415dbb21536c.jpg", rating: 4.5, size: "S", color: "Blue", brand: "Snitch" },
     
     // Bottoms
-    { id: 9, name: "High-Waist Jeans", category: "Bottoms", price: 7600, priceText: "₹7,600", image: "/placeholder.svg", rating: 4.6, size: "M", color: "Blue", brand: "Zara", url: "https://www.zara.com" },
-    { id: 10, name: "Wide Leg Trousers", category: "Bottoms", price: 5800, priceText: "₹5,800", image: "/placeholder.svg", rating: 4.3, size: "L", color: "Black", brand: "Mango", url: "https://www.mango.com" },
-    { id: 11, name: "Pleated Skirt", category: "Bottoms", price: 4200, priceText: "₹4,200", image: "/placeholder.svg", rating: 4.4, size: "S", color: "Pink", brand: "H&M", url: "https://www.hm.com" },
-    { id: 12, name: "Cargo Pants", category: "Bottoms", price: 6500, priceText: "₹6,500", image: "/placeholder.svg", rating: 4.2, size: "M", color: "Green", brand: "Uniqlo", url: "https://www.uniqlo.com" },
+    { id: 9, name: "High-Waist Jeans", category: "Bottoms", price: 7600, priceText: "₹7,600", image: "https://static.zara.net/assets/public/e5f5/bbcb/c0a3498a9759/740d490e19d9/06045224407-e1/06045224407-e1.jpg", rating: 4.6, size: "M", color: "Blue", brand: "Zara" },
+    { id: 10, name: "Wide Leg Trousers", category: "Bottoms", price: 5800, priceText: "₹5,800", image: "https://shop.mango.com/assets/rcs/pics/static/T1/fotos/S/17094096_56_D5.jpg", rating: 4.3, size: "L", color: "Black", brand: "Mango" },
+    { id: 11, name: "Pleated Skirt", category: "Bottoms", price: 4200, priceText: "₹4,200", image: "https://assets.myntassets.com/h_1440,q_90,w_1080/v1/assets/images/10385167/2019/8/22/f15a9f73-fb39-49bb-8891-94dab60cbaed1566460931111--HM-Women-Pink-Solid-Pleated-Skirt-2871566460930581-1.jpg", rating: 4.4, size: "S", color: "Pink", brand: "H&M" },
+    { id: 12, name: "Cargo Pants", category: "Bottoms", price: 6500, priceText: "₹6,500", image: "https://image.uniqlo.com/UQ/ST3/sg/imagesgoods/463957/sub/sggoods_463957_sub7_3x4.jpg", rating: 4.2, size: "M", color: "Green", brand: "Uniqlo" },
     
     // Outerwear
-    { id: 13, name: "Classic Denim Jacket", category: "Outerwear", price: 10320, priceText: "₹10,320", image: "/placeholder.svg", rating: 4.8, size: "L", color: "Blue", brand: "H&M", url: "https://www.hm.com" },
-    { id: 14, name: "Leather Jacket", category: "Outerwear", price: 15000, priceText: "₹15,000", image: "/placeholder.svg", rating: 4.9, size: "XL", color: "Black", brand: "Zara", url: "https://www.zara.com" },
-    { id: 15, name: "Wool Coat", category: "Outerwear", price: 18500, priceText: "₹18,500", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Black", brand: "COS", url: "https://www.cosstores.com" },
-    { id: 16, name: "Bomber Jacket", category: "Outerwear", price: 8900, priceText: "₹8,900", image: "/placeholder.svg", rating: 4.5, size: "S", color: "Green", brand: "Mango", url: "https://www.mango.com" },
+    { id: 13, name: "Classic Denim Jacket", category: "Outerwear", price: 10320, priceText: "₹10,320", image: "/placeholder.svg", rating: 4.8, size: "L", color: "Blue", brand: "H&M" },
+    { id: 14, name: "Leather Jacket", category: "Outerwear", price: 15000, priceText: "₹15,000", image: "/placeholder.svg", rating: 4.9, size: "XL", color: "Black", brand: "Zara" },
+    { id: 15, name: "Wool Coat", category: "Outerwear", price: 18500, priceText: "₹18,500", image: "/placeholder.svg", rating: 4.7, size: "M", color: "Black", brand: "COS" },
+    { id: 16, name: "Bomber Jacket", category: "Outerwear", price: 8900, priceText: "₹8,900", image: "/placeholder.svg", rating: 4.5, size: "S", color: "Green", brand: "Mango" },
   ];
 
   const filteredItems = mockItems.filter(item => {
@@ -77,8 +77,7 @@ const Browse = () => {
       name: item.name,
       price: item.priceText,
       image: item.image,
-      category: item.category,
-      url: item.url
+      category: item.category
     });
   };
 
@@ -89,8 +88,7 @@ const Browse = () => {
       price: item.priceText,
       image: item.image,
       category: item.category,
-      brand: item.brand,
-      url: item.url
+      brand: item.brand
     });
   };
 
