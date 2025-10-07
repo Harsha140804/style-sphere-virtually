@@ -8,7 +8,6 @@ export interface WishlistItem {
   image: string;
   category: string;
   brand: string;
-  url?: string;
 }
 
 interface WishlistContextType {

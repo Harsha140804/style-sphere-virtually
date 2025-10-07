@@ -89,26 +89,13 @@ export const CartSidebar = ({ children }: CartSidebarProps) => {
                   <span className="text-lg font-bold text-primary">₹{totalPrice.toLocaleString()}</span>
                 </div>
                 
-                <div className="space-y-2">
-                  <Button variant="outline" onClick={clearCart} className="w-full">
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={clearCart} className="flex-1">
                     Clear Cart
                   </Button>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Product Links:</p>
-                    {items.map((item) => (
-                      item.url && (
-                        <a 
-                          key={item.id}
-                          href={item.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="block text-sm text-primary hover:underline truncate"
-                        >
-                          {item.name}
-                        </a>
-                      )
-                    ))}
-                  </div>
+                  <Button className="flex-1">
+                    Checkout
+                  </Button>
                 </div>
               </div>
             </>

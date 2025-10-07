@@ -234,6 +234,17 @@ export const TryOnDialog: React.FC<TryOnDialogProps> = ({
                   Choose Photo
                 </Button>
 
+                {!isCameraActive && (
+                  <Button
+                    onClick={startCamera}
+                    disabled={isProcessing}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Video className="w-4 h-4 mr-2" />
+                    Use Camera
+                  </Button>
+                )}
               </div>
             </div>
           )}
